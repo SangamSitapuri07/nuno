@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nuno.app.core.common.Resource
 import com.nuno.app.core.common.UiState
+import com.nuno.app.core.network.SocketManager
 import com.nuno.app.core.utils.isValidEmail
 import com.nuno.app.core.utils.isValidPassword
 import com.nuno.app.core.utils.isValidUsername
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val socketManager: SocketManager
 ) : ViewModel() {
 
     private val _loginState = MutableStateFlow<UiState<Unit>>(UiState.Idle)
@@ -44,6 +46,7 @@ class AuthViewModel @Inject constructor(
             if (loggedIn) {
                 // Ensure user info is extracted from token
                 authRepository.ensureUserInfoLoaded()
+                socketManager.connect()
             }
             _isLoggedIn.value = loggedIn
         }
@@ -70,6 +73,9 @@ class AuthViewModel @Inject constructor(
 
         authRepository.login(email, password)
             .onEach { result ->
+                if (result is Resource.Success) {
+                    socketManager.connect()
+                }
                 _loginState.value = when (result) {
                     is Resource.Loading -> UiState.Loading
                     is Resource.Success -> UiState.Success(Unit)
@@ -132,6 +138,7 @@ class AuthViewModel @Inject constructor(
     // ─────────────────────────────────────────
 
     fun logout() {
+        socketManager.disconnect()
         authRepository.logout()
             .onEach {
                 _isLoggedIn.value = false
