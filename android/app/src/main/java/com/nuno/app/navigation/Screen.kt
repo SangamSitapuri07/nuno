@@ -1,0 +1,25 @@
+package com.nuno.app.navigation
+
+sealed class Screen(val route: String) {
+    data object Splash : Screen("splash")
+    data object Login : Screen("login")
+    data object Register : Screen("register")
+    data object Home : Screen("home")
+    data object Profile : Screen("profile")
+    data object Settings : Screen("settings")
+    data object PlayOptions : Screen("play_options")
+    data object GameModeSelection : Screen("game_mode_selection")
+    data object Matchmaking : Screen("matchmaking")
+    data object CreateRoom : Screen("create_room")
+    data object JoinRoom : Screen("join_room")
+    data object Lobby : Screen("lobby")
+    data object Gameplay : Screen("gameplay")
+    data object Results : Screen("results")
+    data object Friends : Screen("friends")
+    data object Leaderboard : Screen("leaderboard")
+    data object Store : Screen("store")
+    data object Notifications : Screen("notifications")
+    data object Inventory : Screen("inventory")
+    data object Rewards : Screen("rewards")
+    data object History : Screen("history")
+}
