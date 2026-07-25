@@ -42,14 +42,34 @@ sealed class GameScreen(val route: String) {
 fun GameNavGraph(
     navController: NavHostController = rememberNavController()
 ) {
-    val inviteVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.core.social.InviteViewModel>()
+    val activity = androidx.compose.ui.platform.LocalContext.current as? androidx.activity.ComponentActivity
+    val inviteVm: com.nuno.app.core.social.InviteViewModel = activity?.let { androidx.hilt.navigation.compose.hiltViewModel(it) }
+        ?: androidx.hilt.navigation.compose.hiltViewModel()
+    val lobbyVm: com.nuno.app.features.lobby.LobbyViewModel = activity?.let { androidx.hilt.navigation.compose.hiltViewModel(it) }
+        ?: androidx.hilt.navigation.compose.hiltViewModel()
+    val friendsVm: com.nuno.app.features.friends.FriendsViewModel = activity?.let { androidx.hilt.navigation.compose.hiltViewModel(it) }
+        ?: androidx.hilt.navigation.compose.hiltViewModel()
+
     val incomingInvite by inviteVm.incomingInvite.collectAsState()
+    val lobbyState by lobbyVm.uiState.collectAsState()
+
+    var pendingInviteFriendId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(lobbyState.room) {
+        val room = lobbyState.room
+        val friendId = pendingInviteFriendId
+        if (room != null && friendId != null) {
+            inviteVm.sendInvite(friendId, room.roomCode)
+            pendingInviteFriendId = null
+        }
+    }
 
     incomingInvite?.let { invite ->
         com.nuno.app.core.social.IncomingInviteDialog(
             invite = invite,
             onAccept = {
                 inviteVm.acceptInvite()
+                lobbyVm.joinRoomByCode(invite.roomCode)
                 navController.navigate(GameScreen.RoomLobby.route) {
                     popUpTo(GameScreen.Home.route)
                 }
@@ -118,7 +138,6 @@ fun GameNavGraph(
             val profileVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.profile.ProfileViewModel>()
             val profileState by profileVm.profileState.collectAsState()
             val rewardsVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.rewards.RewardsViewModel>()
-            val friendsVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.friends.FriendsViewModel>()
             val friendsState by friendsVm.friendsState.collectAsState()
 
             val username = (profileState as? UiState.Success)?.data?.username ?: "Player"
@@ -154,7 +173,13 @@ fun GameNavGraph(
                     navController.navigate(GameScreen.DailyRewards.route)
                 },
                 onInviteFriend = { friendId ->
-                    // TODO: Create room and send invite
+                    val roomCode = lobbyState.room?.roomCode
+                    if (!roomCode.isNullOrEmpty()) {
+                        inviteVm.sendInvite(friendId, roomCode)
+                    } else {
+                        pendingInviteFriendId = friendId
+                        lobbyVm.createRoomWithPlayerCount(4)
+                    }
                 },
                 onNavigate = { route -> handleNavigation(navController, route) }
             )
@@ -415,8 +440,24 @@ fun GameNavGraph(
                 requests = requests,
                 searchResults = searchResults,
                 onBack = { navController.popBackStack() },
-                onInvite = { },
-                onJoin = { },
+                onInvite = { friendId ->
+                    val roomCode = lobbyState.room?.roomCode
+                    if (!roomCode.isNullOrEmpty()) {
+                        inviteVm.sendInvite(friendId, roomCode)
+                    } else {
+                        pendingInviteFriendId = friendId
+                        lobbyVm.createRoomWithPlayerCount(4)
+                    }
+                },
+                onJoin = { friendId ->
+                    val roomCode = lobbyState.room?.roomCode
+                    if (!roomCode.isNullOrEmpty()) {
+                        lobbyVm.joinRoomByCode(roomCode)
+                        navController.navigate(GameScreen.RoomLobby.route) {
+                            popUpTo(GameScreen.Home.route)
+                        }
+                    }
+                },
                 onAcceptRequest = { friendsVm.acceptRequest(it) },
                 onRejectRequest = { friendsVm.rejectRequest(it) },
                 onSearch = { friendsVm.searchPlayers(it) },

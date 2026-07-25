@@ -68,6 +68,10 @@ class FriendsViewModel @Inject constructor(
         viewModelScope.launch {
             socketManager.events.collect { event ->
                 when (event.event) {
+                    com.nuno.app.core.utils.Constants.EVENT_AUTHENTICATED -> {
+                        loadFriends()
+                        loadRequests()
+                    }
                     "friend.statusUpdated" -> {
                         val data = event.data ?: return@collect
                         val userId = data.optString("userId")
