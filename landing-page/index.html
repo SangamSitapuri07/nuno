@@ -736,19 +736,23 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
       <canvas id="scrollCanvas"></canvas>
     </div>
     <div class="scroll-3d-label" data-stage="0">
-      <small>Stage 1 — Idle</small>
-      The Beauty<br>of Precision
-    </div>
-    <div class="scroll-3d-label" data-stage="1">
-      <small>Stage 2 — Showcase</small>
-      4 Wavelengths.<br>One Perfect Match.
-    </div>
-    <div class="scroll-3d-label" data-stage="2">
-      <small>Stage 3 — Exploded View</small>
+      <small>Stage 1 — Assembled</small>
       5 Precision Parts.<br>Engineered to Perform.
     </div>
+    <div class="scroll-3d-label" data-stage="1">
+      <small>Stage 2 — Rotating</small>
+      360° View of<br>Every Detail.
+    </div>
+    <div class="scroll-3d-label" data-stage="2">
+      <small>Stage 3 — Disassembling</small>
+      Watch the Parts<br>Come Apart.
+    </div>
     <div class="scroll-3d-label" data-stage="3">
-      <small>Stage 4 — Reassembled</small>
+      <small>Stage 4 — Fully Disassembled</small>
+      5 Components.<br>One Perfect Machine.
+    </div>
+    <div class="scroll-3d-label" data-stage="4">
+      <small>Stage 5 — Reassembled</small>
       Zero Pain.<br>Pure Confidence.
     </div>
   </div>
@@ -1635,129 +1639,174 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
   }
 
   // ============================================================
-  // BONE-DRIVEN SCROLL ANIMATION
-  // Animates the actual model parts (Object_4, Object_5, ... Object_8)
-  // through 4 stages: INTACT → ASSEMBLED → EXPLODED → FOCUSED
+  // BONE-DRIVEN ASSEMBLY/DISASSEMBLY ANIMATION
+  // The model starts assembled. As user scrolls, it progressively
+  // disassembles (each part moves along its own axis), then rotates
+  // horizontally, then reassembles in reverse order.
+  //
+  // Per-part disassembly map (extracted from GLB bounding boxes):
+  //   Object_4 (Z= 0.000): body part 1  → moves DOWN (-Y)
+  //   Object_5 (Z= 0.000): body part 2  → moves LEFT (-X)
+  //   Object_6 (Z= 0.000): body part 3  → moves RIGHT (+X)
+  //   Object_7 (Z= 0.000): body part 4  → moves UP (+Y)
+  //   Object_8 (Z=-0.195): laser tip    → moves FORWARD (+Z) toward viewer
   // ============================================================
   function makeBoneAnimator(modelGroup) {
     // Find all the part meshes inside the model
     const parts = [];
     modelGroup.traverse((node) => {
       if (node.isMesh) {
-        // Save original transform (so we can restore on exit)
+        // Save original transform
         node.userData.originalPos = node.position.clone();
         node.userData.originalRot = node.rotation.clone();
         node.userData.originalScale = node.scale.clone();
         node.userData.name = node.name || 'unnamed';
+        // Compute the part's bounding box center (in local space)
+        const bbox = new THREE.Box3().setFromObject(node);
+        node.userData.localCenter = bbox.getCenter(new THREE.Vector3());
+        // Compute size
+        node.userData.localSize = bbox.getSize(new THREE.Vector3());
         parts.push(node);
       }
     });
 
-    // Sort parts by name (Object_4, Object_5, Object_6, Object_7, Object_8)
+    // Sort by name for deterministic ordering (Object_4, Object_5, ..., Object_8)
     parts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    // Identify which is the laser tip (last one is usually Object_8 — the emitter)
+    // Identify the tip (the last part — Object_8 — the laser emitter)
     const tip = parts[parts.length - 1];
     const bodyParts = parts.slice(0, -1);
 
-    console.log('🔧 Bone-driven animator found', parts.length, 'parts:', parts.map(p => p.name));
+    // Define per-part disassembly DIRECTION (where each part moves when exploded)
+    // This is a CAD-style directional separation — each part goes a unique way
+    const disassembleDirections = {
+      'Object_4': new THREE.Vector3(-0.8, -1.2, 0.3),  // bottom-left, slightly forward
+      'Object_5': new THREE.Vector3(0.8, -1.2, 0.3),   // bottom-right, slightly forward
+      'Object_6': new THREE.Vector3(-1.2, 0.8, 0.3),   // top-left, slightly forward
+      'Object_7': new THREE.Vector3(1.2, 0.8, 0.3),    // top-right, slightly forward
+      'Object_8': new THREE.Vector3(0, 0, 1.8),        // tip shoots straight forward (toward viewer)
+    };
+
+    // Default fallback direction (if part name not in map)
+    const getDirection = (part) => {
+      return disassembleDirections[part.userData.name] || new THREE.Vector3(
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        Math.random() * 0.5
+      );
+    };
+
+    // Stagger delay per part (gives a wave-like assembly effect)
+    const getStaggerDelay = (index) => index * 0.06; // 60ms per part
+
+    console.log('🦴 Assembly animator found', parts.length, 'parts:', parts.map(p => p.name));
 
     return {
       parts,
       bodyParts,
       tip,
 
-      // Stage 0: INTACT (model in normal pose)
-      // Stage 1: ASSEMBLED (rotate to show all sides)
-      // Stage 2: EXPLODED (parts separate to show internal structure)
-      // Stage 3: FOCUSED (parts reassemble, tip glows/highlights)
-      apply(progress) {
-        // progress: 0..1
-        const stage = progress * 4; // 0..4
+      // progress: 0..1 (maps to 5 sub-stages for the assembly story)
+      // Stage 0.0 - 0.15: ASSEMBLED (idle, slight float)
+      // Stage 0.15 - 0.35: ROTATE (continuous horizontal rotation, parts still together)
+      // Stage 0.35 - 0.55: DISASSEMBLE (parts separate along their axes, with stagger)
+      // Stage 0.55 - 0.75: HOLD EXPLODED (rotate while exploded, show all parts)
+      // Stage 0.75 - 0.90: REASSEMBLE (parts come back, reverse stagger)
+      // Stage 0.90 - 1.0: FINAL (assembled, slight scale pulse for "ready" feel)
+      apply(progress, parentRotationY) {
         const t = performance.now() * 0.001;
+        // Continuous horizontal rotation (provided by parent)
+        // (parentRotationY is set externally so all parts rotate together)
 
+        // For each part, compute its individual state
         parts.forEach((part, i) => {
           const orig = part.userData.originalPos;
+          const origRot = part.userData.originalRot;
+          const dir = getDirection(part);
           const isTip = part === tip;
+          const delay = getStaggerDelay(i);
+          const localProgress = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
 
-          // === STAGE 0 (0-0.25): Idle rotation, slight float ===
-          // === STAGE 1 (0.25-0.5): Rotate around Y to show different angles ===
-          // === STAGE 2 (0.5-0.75): EXPLODE — body parts separate, tip moves forward ===
-          // === STAGE 3 (0.75-1.0): REASSEMBLE with tip pulse + scale boost ===
-
-          let explodeFactor = 0;  // 0 = together, 1 = exploded
-          let scaleBoost = 1;
+          // Compute the part's individual state
+          let separationFactor = 0;  // 0 = assembled, 1 = fully separated
+          let localRotZ = 0;         // extra rotation during separation
+          let localRotX = 0;
+          let localScale = 1;
           let tipGlow = 0;
-          let rotY = 0;
 
-          if (stage < 1) {
-            // Stage 0: gentle idle
-            rotY = t * 0.3;
-          } else if (stage < 2) {
-            // Stage 1: rotate showcase
-            const localT = stage - 1; // 0..1
-            rotY = localT * Math.PI * 0.5; // rotate 90° to show side
-          } else if (stage < 3) {
-            // Stage 2: EXPLODE
-            const localT = (stage - 2); // 0..1
-            // Smooth ease-out explosion
-            explodeFactor = 1 - Math.pow(1 - localT, 3);
-            rotY = Math.PI * 0.5; // hold rotated view
-          } else {
-            // Stage 3: REASSEMBLE with tip focus
-            const localT = (stage - 3); // 0..1
-            // Ease-in reassembly (parts come back together)
-            explodeFactor = 1 - (localT < 0.5 ? localT * 2 : 1);
-            rotY = Math.PI * 0.5 + localT * Math.PI * 0.5; // continue rotating
-            // Tip glows at end
-            tipGlow = localT;
-            scaleBoost = 1 + localT * 0.15;
-          }
-
-          // Apply explode offset: each part moves along its axis based on its index
-          // Use the bounding box center to spread parts in a meaningful way
-          if (explodeFactor > 0) {
-            // Calculate a unit direction for each part based on its position
-            const direction = new THREE.Vector3();
-            // Use the original part position to determine which way to push
-            if (isTip) {
-              // Tip moves forward (positive Z)
-              direction.set(0, 0, 1.5);
+          if (localProgress < 0.15) {
+            // SUB-STAGE A: ASSEMBLED (idle)
+            separationFactor = 0;
+          } else if (localProgress < 0.35) {
+            // SUB-STAGE B: ROTATE WHILE ASSEMBLED
+            // No separation, just the parent rotation animates it
+            separationFactor = 0;
+          } else if (localProgress < 0.55) {
+            // SUB-STAGE C: DISASSEMBLE
+            // Map 0.35..0.55 → 0..1 with ease-out (parts "click" apart)
+            const t = (localProgress - 0.35) / 0.20;
+            // Ease-out cubic for a snappy "release" feel
+            separationFactor = 1 - Math.pow(1 - t, 3);
+            // Add a small forward tumble to body parts, none to tip
+            if (!isTip) {
+              localRotZ = (i % 2 === 0 ? 1 : -1) * separationFactor * 0.4;
+              localRotX = separationFactor * 0.2;
             } else {
-              // Body parts spread outward in a fan pattern based on index
-              const angle = (i / Math.max(1, bodyParts.length - 1) - 0.5) * Math.PI * 0.7;
-              direction.set(
-                Math.sin(angle) * 1.2,
-                Math.cos(angle * 0.5) * 0.3,
-                0
-              );
+              // Tip stays aligned forward
+              localRotZ = 0;
+              localRotX = 0;
             }
-            part.position.copy(orig).addScaledVector(direction, explodeFactor);
+          } else if (localProgress < 0.75) {
+            // SUB-STAGE D: HOLD EXPLODED
+            separationFactor = 1;
+            // Subtle floating wobble while exploded
+            if (!isTip) {
+              localRotZ = (i % 2 === 0 ? 1 : -1) * 0.4 + Math.sin(t * 1.5 + i) * 0.05;
+              localRotX = 0.2 + Math.cos(t * 1.2 + i) * 0.05;
+            }
+          } else if (localProgress < 0.90) {
+            // SUB-STAGE E: REASSEMBLE (reverse stagger)
+            const t = (localProgress - 0.75) / 0.15;
+            // Ease-in-out for smooth assembly
+            separationFactor = 1 - (t < 0.5 ? t * 2 : 1 - (t - 0.5) * 2);
+            // Ease-out cubic
+            separationFactor = Math.pow(separationFactor, 2);
+            // Reset rotations smoothly
+            localRotZ = (1 - t) * 0.4 * (i % 2 === 0 ? 1 : -1);
+            localRotX = (1 - t) * 0.2;
+            if (isTip) tipGlow = t;
           } else {
-            part.position.copy(orig);
+            // SUB-STAGE F: FINAL — assembled, ready
+            separationFactor = 0;
+            localRotZ = 0;
+            localRotX = 0;
+            if (isTip) {
+              // Tip gets a celebratory pulse
+              tipGlow = 1;
+              const pulse = 1 + Math.sin(t * 4) * 0.08;
+              localScale = pulse;
+            }
           }
 
-          // Rotation per part: each part spins slightly during explosion
-          if (explodeFactor > 0) {
-            const partSpin = explodeFactor * (isTip ? Math.PI * 0.4 : Math.PI * 0.2);
-            part.rotation.x = part.userData.originalRot.x + (i * 0.3) * explodeFactor;
-            part.rotation.y = part.userData.originalRot.y + partSpin * Math.sign(i - 2);
-            part.rotation.z = part.userData.originalRot.z + explodeFactor * 0.1 * (i % 2 === 0 ? 1 : -1);
-          } else {
-            part.rotation.copy(part.userData.originalRot);
-          }
+          // Apply position: original + direction * separationFactor
+          part.position.copy(orig).addScaledVector(dir, separationFactor);
 
-          // Scale: pulse the tip in stage 3
-          if (isTip && tipGlow > 0) {
-            const pulse = 1 + Math.sin(t * 6) * 0.15 * tipGlow;
-            part.scale.copy(part.userData.originalScale).multiplyScalar(pulse * scaleBoost);
-          } else {
-            part.scale.copy(part.userData.originalScale).multiplyScalar(scaleBoost);
-          }
+          // Apply rotation: original + per-part tumbles
+          part.rotation.x = origRot.x + localRotX;
+          part.rotation.y = origRot.y;
+          part.rotation.z = origRot.z + localRotZ;
+
+          // Apply scale
+          part.scale.copy(part.userData.originalScale).multiplyScalar(localScale);
         });
 
-        // Return extra info for camera/section
-        return { tip, bodyParts, stage: Math.floor(stage), progress: progress };
+        return {
+          tip,
+          bodyParts,
+          progress,
+          isExploded: progress > 0.35 && progress < 0.75,
+          isAssembled: progress < 0.15 || progress > 0.90,
+        };
       }
     };
   }
@@ -2007,9 +2056,14 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       const total = section.offsetHeight - window.innerHeight;
       const scrolled = -rect.top;
       progress = Math.max(0, Math.min(1, scrolled / total));
-      const stage = Math.floor(progress * 4);
+      // Determine which 5 sub-stages are showing based on new stage map
+      let activeLabel = 0;
+      if (progress > 0.15 && progress < 0.35) activeLabel = 1;
+      else if (progress >= 0.35 && progress < 0.55) activeLabel = 2;
+      else if (progress >= 0.55 && progress < 0.75) activeLabel = 3;
+      else if (progress >= 0.75) activeLabel = 4;
       labels.forEach((l, i) => {
-        l.style.opacity = (i === stage) ? '1' : '0';
+        l.style.opacity = (i === activeLabel) ? '1' : '0';
       });
     }
     window.addEventListener('scroll', updateScroll, { passive: true });
@@ -2020,12 +2074,23 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
+      // Continuous horizontal rotation that NEVER stops
+      // The whole model (and all its parts) rotates around Y constantly
+      // Speed varies with scroll progress for dramatic effect
+      let rotSpeed = 0.15; // base rotation
+      if (progress > 0.35) rotSpeed = 0.4; // faster during disassembly
+      if (progress > 0.75) rotSpeed = 0.3; // settle during reassembly
+      if (modelRoot) modelRoot.rotation.y += rotSpeed * 0.016;
+
       // Apply the bone-driven animator to the actual model parts
       if (boneAnim) {
-        const result = boneAnim.apply(progress);
-        // Pulse the tip light during stage 3
-        if (result.stage === 3) {
-          tipLight.intensity = 2 + Math.sin(t * 5) * 0.8;
+        const result = boneAnim.apply(progress, modelRoot ? modelRoot.rotation.y : 0);
+        // Pulse the tip light during the final "ready" stage
+        if (progress > 0.85) {
+          tipLight.intensity = 2.5 + Math.sin(t * 5) * 1.0;
+        } else if (result.isExploded) {
+          // During exploded view, tip glows to show it's the laser
+          tipLight.intensity = 1.5 + Math.sin(t * 3) * 0.4;
         } else {
           tipLight.intensity *= 0.92; // decay
         }
@@ -2035,11 +2100,17 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       }
 
       particles.rotation.y = t * 0.05;
-      // Camera dolly: pull back during explosion stage, then push in for finale
-      let camZ = 5 - progress * 1.5;
-      if (progress > 0.5) camZ = 5 - 1.5 + (progress - 0.5) * 1.5; // pull back during explode
-      camera.position.z = camZ;
-      camera.position.y = progress * 0.4;
+      // Camera: pull back during disassembly to see all parts, then push in for finale
+      let camZ = 5;
+      if (progress > 0.35 && progress < 0.75) {
+        // Pull back to see the spread
+        camZ = 5 + 1.5;
+      } else if (progress >= 0.75) {
+        // Push in for the final assembly close-up
+        camZ = 5 - 0.8;
+      }
+      camera.position.z += (camZ - camera.position.z) * 0.05;
+      camera.position.y = Math.sin(progress * Math.PI) * 0.3;
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
