@@ -745,7 +745,7 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
     </div>
     <div class="scroll-3d-label" data-stage="2">
       <small>Stage 3 — Disassembling</small>
-      Watch the Parts<br>Come Apart.
+      Parts Slide Out.<br>Tip Drops Down.
     </div>
     <div class="scroll-3d-label" data-stage="3">
       <small>Stage 4 — Fully Disassembled</small>
@@ -1677,15 +1677,26 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     const tip = parts[parts.length - 1];
     const bodyParts = parts.slice(0, -1);
 
-    // Define per-part disassembly DIRECTION (where each part moves when exploded)
-    // CAD-style directional separation — each part goes to a unique corner
-    // Using larger values to make the spread more dramatic and visible
+    // Define per-part disassembly DIRECTION based on the model's actual geometry.
+    // The model is 5 CONCENTRIC/SHELL parts at the same Y position (Y≈0) with
+    // slight Z offsets. It's a cylindrical device — so we disassemble it like
+    // a real engineer would: along the model's vertical axis.
+    //
+    // Model orientation: handle on top, laser tip on bottom (per user's screenshot)
+    //   Object_4: outer shell front quadrant   → slides OUT to +Z (forward)
+    //   Object_5: outer shell back quadrant    → slides OUT to -Z (back)
+    //   Object_6: outer shell left quadrant    → slides OUT to -X (left)
+    //   Object_7: outer shell right quadrant   → slides OUT to +X (right)
+    //   Object_8: laser tip (the emitter)      → slides DOWN to -Y (down, away from handle)
+    //
+    // Plus a vertical extension so the 4 body parts also lift up slightly,
+    // creating a proper "exploded mechanical view" effect.
     const disassembleDirections = {
-      'Object_4': new THREE.Vector3(-2.2, -1.6, 1.0),  // FAR bottom-left
-      'Object_5': new THREE.Vector3(2.2, -1.6, 1.0),   // FAR bottom-right
-      'Object_6': new THREE.Vector3(-2.2, 1.6, 1.0),   // FAR top-left
-      'Object_7': new THREE.Vector3(2.2, 1.6, 1.0),    // FAR top-right
-      'Object_8': new THREE.Vector3(0, 0, 3.0),        // tip shoots WAY forward (toward viewer)
+      'Object_4': new THREE.Vector3(0, 0.6, 2.2),    // slides forward + slight up
+      'Object_5': new THREE.Vector3(0, 0.6, -2.2),   // slides back + slight up
+      'Object_6': new THREE.Vector3(-2.2, 0.6, 0),   // slides left + slight up
+      'Object_7': new THREE.Vector3(2.2, 0.6, 0),    // slides right + slight up
+      'Object_8': new THREE.Vector3(0, -2.5, 0.5),  // laser tip drops DOWN (away from handle)
     };
 
     // Default fallback direction (if part name not in map)
@@ -2075,15 +2086,25 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
-      // Rotation: fast during "rotating" stage, SLOW during disassembly/exploded so the 4 corners are visible, then resume
-      let rotSpeed = 0;
-      if (progress < 0.15) rotSpeed = 0.1;        // idle - slow
-      else if (progress < 0.35) rotSpeed = 0.5;   // rotating stage - FAST (show the model)
-      else if (progress < 0.55) rotSpeed = 0.05;  // disassembling - VERY SLOW (let corners be visible)
-      else if (progress < 0.75) rotSpeed = 0.15;  // exploded - slow gentle drift
-      else if (progress < 0.90) rotSpeed = 0.05;  // reassembling - slow
-      else rotSpeed = 0.3;                        // final - medium celebratory spin
-      if (modelRoot) modelRoot.rotation.y += rotSpeed * 0.016;
+      // Set the BASE orientation of the model: lay it HORIZONTALLY
+      // The model's natural orientation has the long axis vertical (Y)
+      // We rotate it 90° on Z so the handle is on the right and the
+      // laser tip points down-left, giving a "lying on its side" feel
+      // that's more natural for a laser device.
+      if (modelRoot) {
+        // Keep the base orientation stable
+        modelRoot.rotation.z = -Math.PI / 2;  // 90° clockwise so handle points right
+        // Now add continuous horizontal rotation (Y axis after the Z rotation
+        // becomes the model's "spin around its length" axis)
+        let rotSpeed = 0;
+        if (progress < 0.15) rotSpeed = 0.08;
+        else if (progress < 0.35) rotSpeed = 0.4;   // FAST showcase
+        else if (progress < 0.55) rotSpeed = 0.05;  // SLOW during disassembly
+        else if (progress < 0.75) rotSpeed = 0.12;  // gentle drift
+        else if (progress < 0.90) rotSpeed = 0.05;
+        else rotSpeed = 0.25;                       // celebratory
+        modelRoot.rotation.y += rotSpeed * 0.016;
+      }
 
       // Apply the bone-driven animator to the actual model parts
       if (boneAnim) {
@@ -2092,24 +2113,18 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
         if (progress > 0.85) {
           tipLight.intensity = 2.5 + Math.sin(t * 5) * 1.0;
         } else if (result.isExploded) {
-          // During exploded view, tip glows to show it's the laser
           tipLight.intensity = 1.5 + Math.sin(t * 3) * 0.4;
         } else {
-          tipLight.intensity *= 0.92; // decay
+          tipLight.intensity *= 0.92;
         }
-      } else if (modelRoot) {
-        // Fallback procedural rotation
-        modelRoot.rotation.y = progress * Math.PI * 2;
       }
 
       particles.rotation.y = t * 0.05;
-      // Camera: pull WAY back during disassembly so all 5 parts (4 corners + tip forward) are clearly visible
+      // Camera: pull back during disassembly
       let camZ = 5;
       if (progress > 0.35 && progress < 0.75) {
-        // Pull back significantly to see the spread corners
-        camZ = 5 + 3.0;
+        camZ = 5 + 2.5;
       } else if (progress >= 0.75 && progress < 0.90) {
-        // Push in slowly for the final assembly
         camZ = 5 - 0.8;
       }
       camera.position.z += (camZ - camera.position.z) * 0.05;
