@@ -3,46 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dermis 365 — Laser Hair Removal Landing Page</title>
-<meta name="description" content="Landing page for Dermis 365 Laser Hair Removal. Built with HTML, CSS, JS, and 3D scroll animations.">
+<title>Dermis 365 — 3D Animated Laser Hair Removal Landing Page</title>
+<meta name="description" content="Landing page for Dermis 365 with 3D laser device animation. Built with Three.js, scroll-driven animations, and skincare-optimized color palette.">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#fef9f7 0%,#fce4e4 50%,#f5d5c8 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;color:#3a3a3a}
-.container{max-width:680px;width:100%;background:#fff;border-radius:24px;padding:48px 40px;box-shadow:0 20px 60px rgba(232,165,165,.25);text-align:center}
+.container{max-width:720px;width:100%;background:#fff;border-radius:24px;padding:48px 40px;box-shadow:0 20px 60px rgba(232,165,165,.25);text-align:center}
 .badge{display:inline-block;background:linear-gradient(135deg,#fce4e4,#f5d5c8);color:#d4848a;padding:6px 18px;border-radius:50px;font-size:13px;font-weight:600;letter-spacing:1px;margin-bottom:24px}
-h1{font-family:Georgia,serif;font-size:42px;line-height:1.15;color:#2d3a3a;margin-bottom:16px;font-weight:600}
+.badge::before{content:"🎯 ";margin-right:4px}
+h1{font-family:Georgia,serif;font-size:38px;line-height:1.15;color:#2d3a3a;margin-bottom:16px;font-weight:600}
 h1 .accent{background:linear-gradient(135deg,#e8a5a5,#d4848a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:italic}
-p{font-size:16px;line-height:1.7;color:#7a7a7a;margin-bottom:32px}
-.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:36px;text-align:left}
-.feature{padding:16px;background:#fef9f7;border-radius:12px;border:1px solid #fce4e4}
-.feature strong{color:#d4848a;display:block;font-size:14px;margin-bottom:4px}
-.feature span{color:#7a7a7a;font-size:13px}
-.btn{display:inline-block;padding:16px 36px;background:linear-gradient(135deg,#e8a5a5,#d4848a);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:16px;box-shadow:0 8px 24px rgba(232,165,165,.35);transition:transform .2s}
-.btn:hover{transform:translateY(-2px)}
+.subtitle{font-size:16px;color:#7a7a7a;margin-bottom:32px;line-height:1.6}
+.cta-group{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:36px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;background:linear-gradient(135deg,#e8a5a5,#d4848a);color:#fff;text-decoration:none;border-radius:50px;font-weight:600;font-size:16px;box-shadow:0 8px 24px rgba(232,165,165,.35);transition:transform .2s, box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(232,165,165,.45)}
+.btn-secondary{background:#fff;color:#d4848a;border:2px solid #e8a5a5;box-shadow:none}
+.btn-secondary:hover{background:#fef9f7;box-shadow:0 6px 20px rgba(232,165,165,.2)}
 .arrow{display:inline-block;margin-left:6px;transition:transform .2s}
 .btn:hover .arrow{transform:translateX(4px)}
-.footer{margin-top:32px;font-size:13px;color:#7a7a7a}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:36px;text-align:left}
+.feature{padding:18px;background:linear-gradient(135deg,#fef9f7,#fce4e4);border-radius:14px;border:1px solid #fce4e4;transition:transform .2s}
+.feature:hover{transform:translateY(-2px)}
+.feature-icon{font-size:24px;margin-bottom:8px}
+.feature strong{color:#d4848a;display:block;font-size:14px;margin-bottom:4px}
+.feature span{color:#7a7a7a;font-size:13px;line-height:1.5}
+.status{display:inline-flex;align-items:center;gap:8px;background:#e8f5e9;color:#2e7d32;padding:6px 14px;border-radius:50px;font-size:12px;font-weight:600;margin-top:8px}
+.status::before{content:"";width:8px;height:8px;background:#4caf50;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.footer{margin-top:28px;font-size:13px;color:#7a7a7a;line-height:1.7}
 .footer a{color:#d4848a;text-decoration:none;font-weight:500}
+.footer a:hover{text-decoration:underline}
+.tech-stack{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.tech{background:#fef9f7;color:#d4848a;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid #fce4e4}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="badge">DERMIS 365 · LANDING PAGE</div>
   <h1>Laser Hair Removal Landing Page<br><span class="accent">with 3D Scroll Animations</span></h1>
-  <p>A complete, conversion-optimized Google Ads landing page for a laser hair removal clinic. Built with HTML, CSS, JavaScript, and Three.js 3D scroll-driven animations.</p>
+  <p class="subtitle">A complete, conversion-optimized Google Ads landing page featuring an <strong>interactive 3D laser device</strong> with scroll-driven stage animations. Built with HTML, CSS, JavaScript, and Three.js.</p>
+  <div class="status">3D MODEL LOADED &amp; ACTIVE</div>
 
-  <div class="features">
-    <div class="feature"><strong>🎨 11 Sections</strong><span>Hero, Benefits, Process, Areas, Results, Testimonials, Wavelength, Pricing, FAQ + more</span></div>
-    <div class="feature"><strong>📱 Responsive</strong><span>Mobile-first design, works on all devices</span></div>
-    <div class="feature"><strong>🎬 3D + Scroll</strong><span>Three.js hero + scroll-driven 4-stage animation</span></div>
-    <div class="feature"><strong>⚡ Fast</strong><span>Single file, ~110KB, loads in &lt;1s</span></div>
+  <div class="cta-group">
+    <a href="landing-page/" class="btn">View Live Landing Page <span class="arrow">→</span></a>
+    <a href="https://github.com/SangamSitapuri07/nuno/tree/skin-care/landing-page" class="btn btn-secondary">View Source Code</a>
   </div>
 
-  <a href="landing-page/" class="btn">View Live Landing Page <span class="arrow">→</span></a>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🎯</div>
+      <strong>3D Laser Device</strong>
+      <span>Your uploaded <code>laser_hair_removal_device.glb</code> model loaded with mouse-reactive hero + scroll-driven stages</span>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📜</div>
+      <strong>Scroll Story</strong>
+      <span>Model gets pinned &amp; rotates through 4 stages as user scrolls — rotate → zoom → color shift → reveal</span>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🎨</div>
+      <strong>11 Sections</strong>
+      <span>Hero, Benefits, Process, Areas, Results, Testimonials, Wavelength, Pricing, FAQ + more</span>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📱</div>
+      <strong>Responsive</strong>
+      <span>Mobile-first design, optimized for all devices &amp; screen sizes</span>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <strong>Fast Load</strong>
+      <span>HTML+CSS+JS under 130KB. Model loads with progress indicator</span>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔄</div>
+      <strong>Form + Captcha</strong>
+      <span>Working booking form with name, phone, area dropdown, notes, captcha</span>
+    </div>
+  </div>
 
   <div class="footer">
-    <p>📁 <a href="landing-page/">/landing-page/</a> · 17 files · 8 images · 1 3D-ready template</p>
-    <p style="margin-top:8px">🎯 Built for Google Ads conversion · 🎨 Skincare color palette · 🤖 Auto-loads .glb models</p>
+    <p>📁 Branch: <a href="https://github.com/SangamSitapuri07/nuno/tree/skin-care">skin-care</a> · <a href="landing-page/">/landing-page/</a></p>
+    <div class="tech-stack">
+      <span class="tech">Three.js 3D</span>
+      <span class="tech">GLTFLoader</span>
+      <span class="tech">DRACO compression</span>
+      <span class="tech">Scroll-driven</span>
+      <span class="tech">Mobile-first</span>
+    </div>
   </div>
 </div>
 </body>

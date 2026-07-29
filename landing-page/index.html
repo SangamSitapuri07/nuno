@@ -444,19 +444,19 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
 .three-canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;pointer-events:none;opacity:0;transition:opacity .8s ease}
 .three-canvas.active{opacity:1}
 .three-canvas.hero-mode{opacity:1;pointer-events:auto}
-@media(max-width:768px){.three-canvas{opacity:.5}}
+@media(max-width:768px){.three-canvas{opacity:.55}}
 
 /* Scroll-driven 3D section — pinned canvas during scroll */
-.scroll-3d-section{position:relative;height:400vh;z-index:2}
+.scroll-3d-section{position:relative;height:400vh;z-index:2;background:linear-gradient(180deg,#fef9f7 0%,#fce4e4 30%,#e8a5a5 60%,#d4848a 100%)}
 .scroll-3d-pin{position:sticky;top:0;height:100vh;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .scroll-3d-content{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .scroll-3d-stage{position:relative;width:100%;height:100%}
-.scroll-3d-canvas-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(90vw,600px);height:min(90vw,600px);pointer-events:auto}
+.scroll-3d-canvas-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(90vw,640px);height:min(90vw,640px);pointer-events:auto}
 .scroll-3d-canvas-wrap canvas{display:block;width:100%!important;height:100%!important}
 
 /* Section labels that fade with scroll */
-.scroll-3d-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#fff;font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,4rem);font-weight:600;opacity:0;transition:opacity .4s ease;text-shadow:0 4px 20px rgba(0,0,0,.3);width:90%;max-width:800px;z-index:3}
-.scroll-3d-label small{display:block;font-family:'Inter',sans-serif;font-size:14px;font-weight:400;letter-spacing:2px;text-transform:uppercase;color:#e8a5a5;margin-bottom:10px}
+.scroll-3d-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#fff;font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,4rem);font-weight:600;opacity:0;transition:opacity .4s ease;text-shadow:0 4px 20px rgba(0,0,0,.4);width:90%;max-width:800px;z-index:3;pointer-events:none}
+.scroll-3d-label small{display:block;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:#fff;margin-bottom:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(10px);padding:6px 16px;border-radius:50px;display:inline-block;border:1px solid rgba(255,255,255,.3)}
 
 /* Mobile fallback for 3D section */
 @media(max-width:768px){
@@ -466,14 +466,18 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
   .scroll-3d-label{position:relative;top:0;left:0;transform:none;padding:20px}
 }
 
-/* 3D Loading indicator */
-.three-loader{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;background:rgba(255,255,255,.95);padding:24px 32px;border-radius:16px;box-shadow:0 20px 60px rgba(232,165,165,.3);display:none;align-items:center;gap:14px;font-weight:500;color:#d4848a}
+/* 3D Loading indicator — Enhanced for large model */
+.three-loader{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;background:rgba(255,255,255,.97);padding:32px 40px;border-radius:20px;box-shadow:0 30px 80px rgba(232,165,165,.4);display:none;flex-direction:column;align-items:center;gap:16px;font-weight:500;color:#d4848a;min-width:280px;backdrop-filter:blur(10px)}
 .three-loader.show{display:flex;animation:slideIn .4s ease}
-.three-loader-spinner{width:24px;height:24px;border:3px solid #fce4e4;border-top-color:#d4848a;border-radius:50%;animation:spin 1s linear infinite}
+.three-loader-spinner{width:36px;height:36px;border:4px solid #fce4e4;border-top-color:#d4848a;border-radius:50%;animation:spin 1s linear infinite}
+.three-loader-text{font-size:15px;text-align:center;line-height:1.4}
+.three-loader-progress{width:100%;height:4px;background:#fce4e4;border-radius:2px;overflow:hidden;margin-top:6px}
+.three-loader-progress-bar{height:100%;background:linear-gradient(90deg,#e8a5a5,#d4848a);width:0%;transition:width .2s ease;border-radius:2px}
+.three-loader-percent{font-size:13px;color:#7a7a7a;margin-top:4px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Glow effect for 3D model */
-.model-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:80%;background:radial-gradient(circle,rgba(232,165,165,.4) 0%,transparent 60%);filter:blur(40px);z-index:-1;animation:pulse 3s ease-in-out infinite;pointer-events:none}
+.model-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:80%;background:radial-gradient(circle,rgba(232,165,165,.5) 0%,transparent 60%);filter:blur(50px);z-index:-1;animation:pulse 3s ease-in-out infinite;pointer-events:none}
 
 /* Section text overlaid on 3D scroll */
 .scroll-3d-text{position:absolute;z-index:2;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.5);max-width:600px;padding:0 20px}
@@ -532,7 +536,9 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
 <!-- 3D LOADING INDICATOR -->
 <div class="three-loader" id="threeLoader">
   <div class="three-loader-spinner"></div>
-  <span>Loading 3D experience...</span>
+  <div class="three-loader-text">Loading 3D experience...</div>
+  <div class="three-loader-progress"><div class="three-loader-progress-bar" id="loaderBar"></div></div>
+  <div class="three-loader-percent" id="loaderPercent">0%</div>
 </div>
 
 <!-- FLOATING 3D HERO CANVAS (mouse-reactive) -->
@@ -1539,126 +1545,138 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
 <script type="module">
   import * as THREE from 'three';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-  import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+  import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+  import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 768;
+  const isSlow = isMobile || (navigator.connection && navigator.connection.effectiveType && /2g|slow-2g/.test(navigator.connection.effectiveType));
 
-  /* ========== HERO 3D (Mouse-reactive floating object) ========== */
-  function initHero3D() {
+  // Primary user model (uploaded to repo)
+  const USER_MODEL = 'models/laser_hair_removal_device.glb';
+
+  // Shared loader instances
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+
+  const ktx2Loader = new KTX2Loader();
+  ktx2Loader.setTranscoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/basis/');
+
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
+  gltfLoader.setKTX2Loader(ktx2Loader);
+  gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+  let totalProgress = 0;
+  let progressSteps = 0;
+  function updateProgress(pct, label) {
+    totalProgress = Math.max(totalProgress, pct);
+    const bar = document.getElementById('loaderBar');
+    const txt = document.getElementById('loaderPercent');
+    const lbl = document.querySelector('.three-loader-text');
+    if (bar) bar.style.width = totalProgress + '%';
+    if (txt) txt.textContent = Math.round(totalProgress) + '%';
+    if (lbl && label) lbl.textContent = label;
+  }
+  function hideLoader() {
+    const loader = document.getElementById('threeLoader');
+    if (loader) {
+      loader.style.opacity = '0';
+      loader.style.transform = 'translate(-50%,-50%) scale(0.9)';
+      setTimeout(() => loader.classList.remove('show'), 400);
+    }
+  }
+
+  // ============================================================
+  // HERO 3D — Mouse-reactive floating laser device
+  // ============================================================
+  async function initHero3D() {
     const canvas = document.getElementById('heroCanvas');
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 4);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xfff5e8, 1.2);
-    key.position.set(2, 3, 4);
+    // Studio lighting setup
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const key = new THREE.DirectionalLight(0xfff5e8, 1.4);
+    key.position.set(3, 4, 5);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0xe8a5a5, 0.8);
-    rim.position.set(-3, 1, -2);
+    const rim = new THREE.DirectionalLight(0xe8a5a5, 1.0);
+    rim.position.set(-4, 1, -2);
     scene.add(rim);
-    const fill = new THREE.PointLight(0xfce4e4, 0.6, 10);
-    fill.position.set(0, 0, 3);
+    const fill = new THREE.PointLight(0xfce4e4, 0.8, 12);
+    fill.position.set(2, -2, 3);
     scene.add(fill);
+    const back = new THREE.PointLight(0xd4a5c5, 0.5, 10);
+    back.position.set(0, 0, -3);
+    scene.add(back);
 
-    // Procedural placeholder: skincare bottle with sculpted form
-    function createBottle() {
-      const group = new THREE.Group();
-      // Body — lathe geometry for elegant curves
-      const points = [];
-      for (let i = 0; i < 20; i++) {
-        const t = i / 19;
-        const y = (t - 0.5) * 2.5;
-        // hourglass-ish silhouette
-        const r = 0.6 + Math.sin(t * Math.PI) * 0.25 + Math.cos(t * Math.PI * 2) * 0.05;
-        points.push(new THREE.Vector2(r, y));
-      }
-      const bodyGeo = new THREE.LatheGeometry(points, 64);
-      const bodyMat = new THREE.MeshPhysicalMaterial({
-        color: 0xfce4e4,
-        metalness: 0.1,
-        roughness: 0.15,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        transmission: 0.4,
-        thickness: 1.2,
-        ior: 1.4,
-        envMapIntensity: 1.2
-      });
-      const body = new THREE.Mesh(bodyGeo, bodyMat);
-      group.add(body);
-
-      // Cap
-      const capGeo = new THREE.CylinderGeometry(0.45, 0.5, 0.4, 32);
-      const capMat = new THREE.MeshPhysicalMaterial({
-        color: 0xd4848a,
-        metalness: 0.6,
-        roughness: 0.25,
-        clearcoat: 0.6
-      });
-      const cap = new THREE.Mesh(capGeo, capMat);
-      cap.position.y = 1.5;
-      group.add(cap);
-
-      // Drop on top
-      const dropGeo = new THREE.SphereGeometry(0.15, 32, 32);
-      const dropMat = new THREE.MeshPhysicalMaterial({
-        color: 0xe8a5a5,
-        metalness: 0.9,
-        roughness: 0.1,
-        clearcoat: 1
-      });
-      const drop = new THREE.Mesh(dropGeo, dropMat);
-      drop.position.y = 1.85;
-      group.add(drop);
-
-      return group;
-    }
-
-    let model = createBottle();
-    scene.add(model);
-    model.position.x = isMobile ? 0 : 1.5;
-
-    // Try to load user-uploaded .glb
-    function tryLoadUserModel() {
-      const loader = new GLTFLoader();
-      const candidates = ['models/model.glb', 'models/scene.gltf', 'models/bottle.glb', 'models/laser.glb'];
-      let tried = 0;
-      function tryNext() {
-        if (tried >= candidates.length) return; // Keep placeholder
-        loader.load(
-          candidates[tried],
-          (gltf) => {
-            console.log('✓ Loaded user 3D model:', candidates[tried]);
-            scene.remove(model);
-            model = gltf.scene;
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3()).length();
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.sub(center);
-            model.scale.setScalar(3 / size);
-            if (isMobile) model.position.x = 0; else model.position.x = 1.5;
-            scene.add(model);
+    // Try loading user model
+    let model = null;
+    let isUserModel = false;
+    try {
+      updateProgress(15, 'Loading 3D model...');
+      const gltf = await new Promise((resolve, reject) => {
+        gltfLoader.load(
+          USER_MODEL,
+          (g) => resolve(g),
+          (xhr) => {
+            if (xhr.lengthComputable) {
+              const pct = 15 + (xhr.loaded / xhr.total) * 35;
+              updateProgress(pct, `Loading 3D model... ${Math.round((xhr.loaded/xhr.total)*100)}%`);
+            }
           },
-          undefined,
-          () => tryNext()
+          (err) => reject(err)
         );
-        tried++;
-      }
-      tryNext();
+      });
+      model = gltf.scene;
+      isUserModel = true;
+
+      // Center and scale the model
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3()).length();
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.sub(center);
+
+      // Auto-fit to hero size
+      const targetSize = isMobile ? 2.5 : 2.8;
+      model.scale.setScalar(targetSize / size);
+
+      // Improve any material on the model
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          // Boost env map intensity for realism
+          if (child.material) {
+            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+              child.material.envMapIntensity = 1.5;
+              if (child.material.roughness > 0.7) child.material.roughness = 0.5;
+            }
+          }
+        }
+      });
+
+      // Position for hero (right side on desktop, centered on mobile)
+      if (!isMobile) model.position.x = 1.6;
+      scene.add(model);
+      console.log('✓ Loaded user 3D model:', USER_MODEL);
+    } catch (e) {
+      console.warn('Could not load user model, using procedural fallback:', e.message);
+      model = createProceduralDevice();
+      if (!isMobile) model.position.x = 1.6;
+      scene.add(model);
     }
-    tryLoadUserModel();
 
     // Mouse-reactive
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -1667,7 +1685,7 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       mouse.ty = -(e.clientY / window.innerHeight) * 2 + 1;
     });
 
-    // Scroll-based fade out of hero 3D
+    // Scroll-based fade out
     function checkVisibility() {
       const scrolled = window.pageYOffset;
       const heroHeight = document.querySelector('.hero')?.offsetHeight || 600;
@@ -1679,14 +1697,28 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     }
     window.addEventListener('scroll', checkVisibility, { passive: true });
 
-    let frameId;
+    // Animate
+    updateProgress(55, 'Preparing scene...');
+    const clock = new THREE.Clock();
     function animate() {
-      frameId = requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
       mouse.x += (mouse.tx - mouse.x) * 0.05;
       mouse.y += (mouse.ty - mouse.y) * 0.05;
-      model.rotation.y += 0.003;
-      model.rotation.x = mouse.y * 0.3;
-      model.position.y = Math.sin(Date.now() * 0.001) * 0.15;
+
+      // Auto-rotate + mouse influence
+      model.rotation.y += 0.004;
+      model.rotation.x = mouse.y * 0.4;
+
+      // Floating animation
+      model.position.y = Math.sin(t * 0.8) * 0.15;
+      model.rotation.z = Math.sin(t * 0.5) * 0.05;
+
+      // Scale pulse
+      const pulse = 1 + Math.sin(t * 1.5) * 0.02;
+      model.scale.multiplyScalar(pulse / (model.userData.lastPulse || 1));
+      model.userData.lastPulse = pulse;
+
       renderer.render(scene, camera);
     }
     animate();
@@ -1698,17 +1730,54 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     });
   }
 
-  /* ========== SCROLL-DRIVEN 3D (pinned through sections) ========== */
-  function initScroll3D() {
+  // Procedural laser device (used as fallback)
+  function createProceduralDevice() {
+    const group = new THREE.Group();
+    // Handle (cylinder)
+    const handleGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.6, 32);
+    const handleMat = new THREE.MeshPhysicalMaterial({
+      color: 0xf5f5f5, metalness: 0.2, roughness: 0.3, clearcoat: 0.8
+    });
+    const handle = new THREE.Mesh(handleGeo, handleMat);
+    group.add(handle);
+    // Head (wider, rounded)
+    const headGeo = new THREE.SphereGeometry(0.35, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+    const headMat = new THREE.MeshPhysicalMaterial({
+      color: 0xe8a5a5, metalness: 0.4, roughness: 0.25, clearcoat: 1
+    });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 0.8;
+    head.rotation.x = Math.PI;
+    group.add(head);
+    // Tip
+    const tipGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 32);
+    const tipMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd4848a, metalness: 0.7, roughness: 0.2, clearcoat: 1
+    });
+    const tip = new THREE.Mesh(tipGeo, tipMat);
+    tip.position.y = 1.1;
+    group.add(tip);
+    // Base
+    const baseGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 32);
+    const base = new THREE.Mesh(baseGeo, handleMat);
+    base.position.y = -0.85;
+    group.add(base);
+    return group;
+  }
+
+  // ============================================================
+  // SCROLL-DRIVEN 3D — Pinned through 4 stages
+  // ============================================================
+  async function initScroll3D() {
     const section = document.getElementById('scroll3D');
     const canvas = document.getElementById('scrollCanvas');
     if (!section || !canvas) return;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.z = 5;
+    camera.position.set(0, 0, 5);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
     const wrap = document.querySelector('.scroll-3d-canvas-wrap');
     function resize() {
       const w = wrap.clientWidth;
@@ -1718,100 +1787,110 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       camera.updateProjectionMatrix();
     }
     resize();
-
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const k = new THREE.DirectionalLight(0xfff5e8, 1.4);
-    k.position.set(3, 4, 5);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const k = new THREE.DirectionalLight(0xfff5e8, 1.6);
+    k.position.set(4, 5, 6);
     scene.add(k);
-    const r = new THREE.DirectionalLight(0xe8a5a5, 1);
-    r.position.set(-3, 1, -2);
+    const r = new THREE.DirectionalLight(0xe8a5a5, 1.2);
+    r.position.set(-4, 1, -2);
     scene.add(r);
-    const b = new THREE.PointLight(0x7fa896, 0.8, 8);
-    b.position.set(0, -2, 3);
+    const b = new THREE.PointLight(0x7fa896, 0.8, 10);
+    b.position.set(0, -2, 4);
     scene.add(b);
+    const p = new THREE.PointLight(0xd4a5c5, 0.6, 10);
+    p.position.set(2, 3, -3);
+    scene.add(p);
 
-    // Procedural 3D model — a beautifull layered "beauty device"
     const root = new THREE.Group();
     scene.add(root);
 
-    // Main crystal — represents the laser crystal / wavelength tech
-    const crystalGeo = new THREE.IcosahedronGeometry(1, 1);
-    const crystalMat = new THREE.MeshPhysicalMaterial({
-      color: 0xe8a5a5,
-      metalness: 0.2,
-      roughness: 0.05,
-      transmission: 0.7,
-      thickness: 1.5,
-      ior: 1.5,
-      clearcoat: 1,
-      clearcoatRoughness: 0.1,
-      envMapIntensity: 1.5
-    });
-    const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-    root.add(crystal);
+    // Try user model
+    let userModel = null;
+    try {
+      updateProgress(70, 'Preparing scroll 3D...');
+      const gltf = await new Promise((resolve, reject) => {
+        gltfLoader.load(
+          USER_MODEL,
+          (g) => resolve(g),
+          (xhr) => {
+            if (xhr.lengthComputable) {
+              const pct = 70 + (xhr.loaded / xhr.total) * 20;
+              updateProgress(pct, `Loading 3D model... ${Math.round((xhr.loaded/xhr.total)*100)}%`);
+            }
+          },
+          (err) => reject(err)
+        );
+      });
+      userModel = gltf.scene;
+      const box = new THREE.Box3().setFromObject(userModel);
+      const size = box.getSize(new THREE.Vector3()).length();
+      const center = box.getCenter(new THREE.Vector3());
+      userModel.position.sub(center);
+      userModel.scale.setScalar(4.5 / size);
+      userModel.traverse((child) => {
+        if (child.isMesh) {
+          if (child.material) {
+            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+              child.material.envMapIntensity = 1.8;
+            }
+          }
+        }
+      });
+      root.add(userModel);
+      console.log('✓ Loaded user 3D model for scroll section');
+    } catch (e) {
+      console.warn('Scroll 3D using procedural fallback:', e.message);
+      // Procedural crystal (the old default)
+      const crystalGeo = new THREE.IcosahedronGeometry(1.2, 1);
+      const crystalMat = new THREE.MeshPhysicalMaterial({
+        color: 0xe8a5a5, metalness: 0.2, roughness: 0.05,
+        transmission: 0.7, thickness: 1.5, ior: 1.5,
+        clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.5
+      });
+      const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+      root.add(crystal);
+    }
 
-    // Orbiting rings (representing the 4 wavelengths)
+    // Orbiting wavelength rings
     const rings = [];
     const ringColors = [0xd4a5c5, 0xe8a5a5, 0xe8b896, 0xa8c5b5];
     for (let i = 0; i < 4; i++) {
-      const ringGeo = new THREE.TorusGeometry(1.7, 0.04, 16, 100);
-      const ringMat = new THREE.MeshBasicMaterial({ color: ringColors[i], transparent: true, opacity: 0.8 });
+      const ringGeo = new THREE.TorusGeometry(1.8, 0.04, 16, 100);
+      const ringMat = new THREE.MeshBasicMaterial({ color: ringColors[i], transparent: true, opacity: 0.7 });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.random() * Math.PI;
       ring.rotation.y = Math.random() * Math.PI;
       root.add(ring);
-      rings.push({ mesh: ring, axis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize() });
+      rings.push({ mesh: ring, axis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(), baseSpeed: 0.2 + i * 0.1 });
     }
 
-    // Particles
+    // Floating particles
     const particleCount = 200;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
-      positions[i*3] = (Math.random() - 0.5) * 6;
-      positions[i*3+1] = (Math.random() - 0.5) * 6;
-      positions[i*3+2] = (Math.random() - 0.5) * 6;
+      positions[i*3] = (Math.random() - 0.5) * 7;
+      positions[i*3+1] = (Math.random() - 0.5) * 7;
+      positions[i*3+2] = (Math.random() - 0.5) * 7;
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const particleMat = new THREE.PointsMaterial({ color: 0xfce4e4, size: 0.04, transparent: true, opacity: 0.7 });
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // Try user model
-    function tryLoadUser() {
-      const loader = new GLTFLoader();
-      ['models/model.glb', 'models/scene.gltf', 'models/bottle.glb', 'models/laser.glb'].forEach(path => {
-        loader.load(path, (gltf) => {
-          console.log('✓ Loaded scroll 3D model:', path);
-          // remove placeholder
-          while (root.children.length) root.remove(root.children[0]);
-          const m = gltf.scene;
-          const box = new THREE.Box3().setFromObject(m);
-          const size = box.getSize(new THREE.Vector3()).length();
-          const center = box.getCenter(new THREE.Vector3());
-          m.position.sub(center);
-          m.scale.setScalar(3.5 / size);
-          root.add(m);
-        }, undefined, () => {});
-      });
-    }
-    tryLoadUser();
-
-    // Scroll progress through this section
+    // Scroll progress
     let progress = 0;
     const labels = section.querySelectorAll('.scroll-3d-label');
-
     function updateScroll() {
       const rect = section.getBoundingClientRect();
       const total = section.offsetHeight - window.innerHeight;
       const scrolled = -rect.top;
       progress = Math.max(0, Math.min(1, scrolled / total));
-
-      // Active label
       const stage = Math.floor(progress * 4);
       labels.forEach((l, i) => {
         l.style.opacity = (i === stage) ? '1' : '0';
@@ -1820,43 +1899,29 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     window.addEventListener('scroll', updateScroll, { passive: true });
 
     // Animate
-    let raf;
+    const clock = new THREE.Clock();
     function animate() {
-      raf = requestAnimationFrame(animate);
-      const t = Date.now() * 0.001;
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      // Crystal pulse based on progress
-      const scale = 1 + Math.sin(t * 2) * 0.05 + progress * 0.3;
-      crystal.scale.setScalar(scale);
-      crystal.rotation.y = progress * Math.PI * 2;
-      crystal.rotation.x = t * 0.3;
+      // Rotate root model
+      root.rotation.y = progress * Math.PI * 2;
+      root.rotation.x = t * 0.15;
+      const scale = 1 + Math.sin(t * 1.5) * 0.03 + progress * 0.2;
+      root.scale.setScalar(scale);
 
-      // Color shift through stages (rose → coral → sage → gold)
-      const colors = [
-        new THREE.Color(0xe8a5a5),
-        new THREE.Color(0xe8b896),
-        new THREE.Color(0xa8c5b5),
-        new THREE.Color(0xd4a5c5)
-      ];
-      const stage = Math.floor(progress * 4);
-      const next = Math.min(stage + 1, 3);
-      const localT = (progress * 4) - stage;
-      crystalMat.color.copy(colors[stage]).lerp(colors[next], localT);
-
-      // Rings orbit at different speeds
+      // Rings orbit
       rings.forEach((r, i) => {
-        const speed = 0.2 + i * 0.1 + progress * 0.5;
-        r.mesh.rotateOnAxis(r.axis, 0.01 * speed);
+        r.mesh.rotateOnAxis(r.axis, 0.008 * (r.baseSpeed + progress * 0.5));
         r.mesh.material.opacity = 0.4 + Math.sin(t * 2 + i) * 0.3;
       });
 
-      // Particles drift
       particles.rotation.y = t * 0.05;
-      particles.rotation.x = progress * Math.PI * 0.5;
 
       // Camera dolly with progress
-      camera.position.z = 5 - progress * 0.8;
-      camera.position.y = progress * 0.3;
+      camera.position.z = 5 - progress * 1.2;
+      camera.position.y = progress * 0.5;
+      camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
     }
@@ -1865,22 +1930,28 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     window.addEventListener('resize', resize);
   }
 
-  /* ========== INIT ========== */
-  function init() {
+  // ============================================================
+  // INIT
+  // ============================================================
+  async function init() {
     const loader = document.getElementById('threeLoader');
     if (loader) loader.classList.add('show');
-    setTimeout(() => {
-      try {
-        if (!reducedMotion) {
-          initHero3D();
-          initScroll3D();
-        }
-        if (loader) loader.classList.remove('show');
-      } catch (e) {
-        console.error('3D init error:', e);
-        if (loader) loader.classList.remove('show');
+    updateProgress(5, 'Initializing 3D...');
+    try {
+      if (reducedMotion) {
+        updateProgress(100, 'Skipped (reduced motion)');
+        setTimeout(hideLoader, 400);
+        return;
       }
-    }, 200);
+      // Init both canvases in parallel for speed
+      await Promise.all([initHero3D(), initScroll3D()]);
+      updateProgress(100, 'Ready!');
+      setTimeout(hideLoader, 300);
+    } catch (e) {
+      console.error('3D init error:', e);
+      updateProgress(100, 'Ready (fallback mode)');
+      setTimeout(hideLoader, 300);
+    }
   }
 
   if (document.readyState === 'loading') {

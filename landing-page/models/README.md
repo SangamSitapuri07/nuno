@@ -1,77 +1,92 @@
-# 📦 3D Models Folder
+# 📦 3D Models — Currently Using: `laser_hair_removal_device.glb`
 
-Drop your 3D model file here and it will automatically load into the page.
+## ✅ Active Model
 
-## Supported Formats
+The page is currently configured to load:
 
-| Format | Extension | Notes |
-|--------|-----------|-------|
-| **glTF Binary** | `.glb` | ✅ **Recommended** — single file, fastest |
-| **glTF** | `.gltf` | Needs accompanying `.bin` + texture files |
-| **FBX** | `.fbx` | Auto-converted at load |
-| **OBJ** | `.obj` | Needs accompanying `.mtl` file |
+**`models/laser_hair_removal_device.glb`** (12.16 MB) — your uploaded laser hair removal device model
 
-## File Naming (auto-detected in this order)
+## How It Works
 
-The page will look for your file with these names automatically:
+The 3D engine automatically:
 
-1. `models/model.glb` ← **use this name for fastest load**
-2. `models/scene.gltf`
-3. `models/bottle.glb`
-4. `models/laser.glb`
+1. **Loads `laser_hair_removal_device.glb`** on page load with Draco/Meshopt support
+2. **Shows a progress indicator** with percentage while downloading
+3. **Centers and auto-scales** the model to fit the hero (mouse-reactive) and scroll section (pinned)
+4. **Falls back to a procedural laser device** if your model fails to load
+5. **Optimizes materials** (boosts envMapIntensity, adjusts roughness) for premium look
 
-## Quick Start
+## 3D Animation Features
 
-1. Export your 3D model as **`.glb`** (best format)
-2. Rename to `model.glb`
-3. Drop it in this folder
-4. Refresh the page — it loads automatically
+### Hero (mouse-reactive)
+- Gentle auto-rotation
+- Follows mouse cursor (X/Y axis tilt)
+- Floating sine-wave animation
+- Pulse scale animation
+- Fades out as user scrolls past hero
 
-## Recommended Model Specs
+### Scroll-driven section (pinned 4 stages)
+The model is **pinned** as user scrolls through 4 stages:
 
-- **Polygon count**: < 50,000 triangles (for smooth 60fps)
-- **File size**: < 5 MB
-- **Textures**: Embedded in `.glb` (or alongside `.gltf`)
-- **Origin**: Centered at world origin
-- **Scale**: Any — engine auto-scales to fit
+| Stage | Behavior |
+|-------|----------|
+| **1. The Beauty** | Model rotates, glow effect, pink palette |
+| **2. The Tech** | 4 orbiting wavelength rings appear (the colors match your model's brand) |
+| **3. The Result** | Camera zooms in, model spins 180° |
+| **4. The Promise** | Camera dollies back, full reveal, particles intensify |
 
-## Where to Get 3D Models (free)
+Background gradient **shifts colors** as you scroll through stages (cream → pink → rose → deep rose).
 
-- [Sketchfab](https://sketchfab.com) — millions of free models
-- [TurboSquid](https://turbosquid.com) — free + premium
-- [CGTrader](https://cgtrader.com) — free section
-- [Poly Pizza](https://poly.pizza) — low-poly free models
-- [Three.js examples](https://threejs.org/examples) — reference models
+## Performance
 
-## What Happens Without a Model?
+The model is **12.16 MB** which is large but acceptable for premium landing pages. The engine:
+- Uses **DRACO compression** if your model is compressed (saves ~70% size)
+- Uses **Meshopt decoder** for further optimization
+- Uses **progressive loading** with real-time progress bar
+- **Reduces quality on mobile** automatically
 
-If no model file is present, the page gracefully falls back to a **procedural 3D model**:
+## Optimize Your Model (Optional, Recommended)
 
-### Hero (mouse-reactive):
-- Skincare bottle (lathe geometry, glass material)
-- Floats gently + follows mouse
+To reduce the 12MB file size:
 
-### Scroll-driven section (pinned through 4 stages):
-- Glowing crystal (icosahedron, glass material)
-- 4 orbiting colored rings (the wavelengths)
-- 200 drifting particles
-- Color shifts through 4 stages: rose → coral → sage → lilac
-
-Both placeholders match the brand's pink/blush palette.
-
-## File Too Big? Optimize It!
-
-Use [gltf-transform](https://gltf-transform.dev/) to compress:
 ```bash
-npx gltf-transform optimize input.glb output.glb
+# Install gltf-transform (one-time)
+npm install -g @gltf-transform/cli
+
+# Compress
+gltf-transform optimize input.glb output.glb --texture-compress webp --texture-size 2048
 ```
 
-Or use [glb-pipeline](https://github.com/facebookincubator/GLBpipeline):
-```bash
-npm install -g gltf-pipeline
-gltf-pipeline -i model.glb -o model-compressed.glb -d
+Or use the online tool: https://gltf-transform.dev/
+
+## File Structure
+
 ```
+landing-page/
+├── index.html
+├── models/
+│   ├── laser_hair_removal_device.glb  ← YOUR MODEL (12.16 MB)
+│   └── README.md
+└── ...
+```
+
+## Troubleshooting
+
+**Model not loading?**
+- Check browser console (F12) for errors
+- Verify file is at exactly: `landing-page/models/laser_hair_removal_device.glb`
+- Check file isn't corrupted (re-upload to GitHub)
+- Fallback procedural model will show automatically
+
+**Model too big/too small?**
+- Edit the auto-scale value in `index.html`:
+  - Hero: `const targetSize = isMobile ? 2.5 : 2.8;` 
+  - Scroll: `userModel.scale.setScalar(4.5 / size);`
+
+**Model in wrong position?**
+- Edit the offset in `index.html`:
+  - Hero: `if (!isMobile) model.position.x = 1.6;`
 
 ---
 
-*Once you drop your file here, the 3D animation will work automatically — no code changes needed.*
+*This is your real, uploaded model — drop in replacements anytime and they'll auto-load.*
