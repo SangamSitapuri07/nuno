@@ -736,20 +736,20 @@ footer{background:linear-gradient(135deg,#fce4e4 0%,#fef9f7 100%);color:var(--pr
       <canvas id="scrollCanvas"></canvas>
     </div>
     <div class="scroll-3d-label" data-stage="0">
-      <small>Stage 1 — The Beauty</small>
+      <small>Stage 1 — Idle</small>
       The Beauty<br>of Precision
     </div>
     <div class="scroll-3d-label" data-stage="1">
-      <small>Stage 2 — The Tech</small>
+      <small>Stage 2 — Showcase</small>
       4 Wavelengths.<br>One Perfect Match.
     </div>
     <div class="scroll-3d-label" data-stage="2">
-      <small>Stage 3 — The Result</small>
-      Zero Pain.<br>Pure Confidence.
+      <small>Stage 3 — Exploded View</small>
+      5 Precision Parts.<br>Engineered to Perform.
     </div>
     <div class="scroll-3d-label" data-stage="3">
-      <small>Stage 4 — The Promise</small>
-      Your Transformation<br>Starts Today
+      <small>Stage 4 — Reassembled</small>
+      Zero Pain.<br>Pure Confidence.
     </div>
   </div>
 </section>
@@ -1569,7 +1569,6 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
   gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
   let totalProgress = 0;
-  let progressSteps = 0;
   function updateProgress(pct, label) {
     totalProgress = Math.max(totalProgress, pct);
     const bar = document.getElementById('loaderBar');
@@ -1589,7 +1588,182 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
   }
 
   // ============================================================
-  // HERO 3D — Mouse-reactive floating laser device
+  // HELPER: Load user model and return the GLTF scene
+  // ============================================================
+  let _userGLTF = null;
+  async function loadUserModel() {
+    if (_userGLTF) return _userGLTF;
+    return new Promise((resolve, reject) => {
+      gltfLoader.load(
+        USER_MODEL,
+        (gltf) => { _userGLTF = gltf; resolve(gltf); },
+        (xhr) => {
+          if (xhr.lengthComputable) {
+            const pct = (xhr.loaded / xhr.total) * 50;
+            updateProgress(pct, `Loading 3D model... ${Math.round((xhr.loaded/xhr.total)*100)}%`);
+          }
+        },
+        (err) => reject(err)
+      );
+    });
+  }
+
+  // ============================================================
+  // HELPER: Identify the 5 model parts by name
+  // Returns: { root, parts: [Object_4, Object_5, ...] }
+  // ============================================================
+  function analyzeModel(model) {
+    const parts = [];
+    let root = null;
+    let tip = null;  // The "Object_8" — laser emitter
+    let body = [];   // The body sections (Object_4-7)
+
+    model.traverse((node) => {
+      if (node.isMesh) {
+        // Identify by name
+        const name = node.name || '';
+        parts.push(node);
+        if (name === 'Object_8' || name === 'Mesh1.0_0') {
+          tip = node;
+        }
+      }
+    });
+
+    // Find the actual content root (deepest meaningful node)
+    root = model;
+    return { root, parts, tip, body };
+  }
+
+  // ============================================================
+  // BONE-DRIVEN SCROLL ANIMATION
+  // Animates the actual model parts (Object_4, Object_5, ... Object_8)
+  // through 4 stages: INTACT → ASSEMBLED → EXPLODED → FOCUSED
+  // ============================================================
+  function makeBoneAnimator(modelGroup) {
+    // Find all the part meshes inside the model
+    const parts = [];
+    modelGroup.traverse((node) => {
+      if (node.isMesh) {
+        // Save original transform (so we can restore on exit)
+        node.userData.originalPos = node.position.clone();
+        node.userData.originalRot = node.rotation.clone();
+        node.userData.originalScale = node.scale.clone();
+        node.userData.name = node.name || 'unnamed';
+        parts.push(node);
+      }
+    });
+
+    // Sort parts by name (Object_4, Object_5, Object_6, Object_7, Object_8)
+    parts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Identify which is the laser tip (last one is usually Object_8 — the emitter)
+    const tip = parts[parts.length - 1];
+    const bodyParts = parts.slice(0, -1);
+
+    console.log('🔧 Bone-driven animator found', parts.length, 'parts:', parts.map(p => p.name));
+
+    return {
+      parts,
+      bodyParts,
+      tip,
+
+      // Stage 0: INTACT (model in normal pose)
+      // Stage 1: ASSEMBLED (rotate to show all sides)
+      // Stage 2: EXPLODED (parts separate to show internal structure)
+      // Stage 3: FOCUSED (parts reassemble, tip glows/highlights)
+      apply(progress) {
+        // progress: 0..1
+        const stage = progress * 4; // 0..4
+        const t = performance.now() * 0.001;
+
+        parts.forEach((part, i) => {
+          const orig = part.userData.originalPos;
+          const isTip = part === tip;
+
+          // === STAGE 0 (0-0.25): Idle rotation, slight float ===
+          // === STAGE 1 (0.25-0.5): Rotate around Y to show different angles ===
+          // === STAGE 2 (0.5-0.75): EXPLODE — body parts separate, tip moves forward ===
+          // === STAGE 3 (0.75-1.0): REASSEMBLE with tip pulse + scale boost ===
+
+          let explodeFactor = 0;  // 0 = together, 1 = exploded
+          let scaleBoost = 1;
+          let tipGlow = 0;
+          let rotY = 0;
+
+          if (stage < 1) {
+            // Stage 0: gentle idle
+            rotY = t * 0.3;
+          } else if (stage < 2) {
+            // Stage 1: rotate showcase
+            const localT = stage - 1; // 0..1
+            rotY = localT * Math.PI * 0.5; // rotate 90° to show side
+          } else if (stage < 3) {
+            // Stage 2: EXPLODE
+            const localT = (stage - 2); // 0..1
+            // Smooth ease-out explosion
+            explodeFactor = 1 - Math.pow(1 - localT, 3);
+            rotY = Math.PI * 0.5; // hold rotated view
+          } else {
+            // Stage 3: REASSEMBLE with tip focus
+            const localT = (stage - 3); // 0..1
+            // Ease-in reassembly (parts come back together)
+            explodeFactor = 1 - (localT < 0.5 ? localT * 2 : 1);
+            rotY = Math.PI * 0.5 + localT * Math.PI * 0.5; // continue rotating
+            // Tip glows at end
+            tipGlow = localT;
+            scaleBoost = 1 + localT * 0.15;
+          }
+
+          // Apply explode offset: each part moves along its axis based on its index
+          // Use the bounding box center to spread parts in a meaningful way
+          if (explodeFactor > 0) {
+            // Calculate a unit direction for each part based on its position
+            const direction = new THREE.Vector3();
+            // Use the original part position to determine which way to push
+            if (isTip) {
+              // Tip moves forward (positive Z)
+              direction.set(0, 0, 1.5);
+            } else {
+              // Body parts spread outward in a fan pattern based on index
+              const angle = (i / Math.max(1, bodyParts.length - 1) - 0.5) * Math.PI * 0.7;
+              direction.set(
+                Math.sin(angle) * 1.2,
+                Math.cos(angle * 0.5) * 0.3,
+                0
+              );
+            }
+            part.position.copy(orig).addScaledVector(direction, explodeFactor);
+          } else {
+            part.position.copy(orig);
+          }
+
+          // Rotation per part: each part spins slightly during explosion
+          if (explodeFactor > 0) {
+            const partSpin = explodeFactor * (isTip ? Math.PI * 0.4 : Math.PI * 0.2);
+            part.rotation.x = part.userData.originalRot.x + (i * 0.3) * explodeFactor;
+            part.rotation.y = part.userData.originalRot.y + partSpin * Math.sign(i - 2);
+            part.rotation.z = part.userData.originalRot.z + explodeFactor * 0.1 * (i % 2 === 0 ? 1 : -1);
+          } else {
+            part.rotation.copy(part.userData.originalRot);
+          }
+
+          // Scale: pulse the tip in stage 3
+          if (isTip && tipGlow > 0) {
+            const pulse = 1 + Math.sin(t * 6) * 0.15 * tipGlow;
+            part.scale.copy(part.userData.originalScale).multiplyScalar(pulse * scaleBoost);
+          } else {
+            part.scale.copy(part.userData.originalScale).multiplyScalar(scaleBoost);
+          }
+        });
+
+        // Return extra info for camera/section
+        return { tip, bodyParts, stage: Math.floor(stage), progress: progress };
+      }
+    };
+  }
+
+  // ============================================================
+  // HERO 3D — Mouse-reactive (uses BONE animator in subtle mode)
   // ============================================================
   async function initHero3D() {
     const canvas = document.getElementById('heroCanvas');
@@ -1606,8 +1780,8 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     renderer.toneMappingExposure = 1.2;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Studio lighting setup
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     const key = new THREE.DirectionalLight(0xfff5e8, 1.4);
     key.position.set(3, 4, 5);
     scene.add(key);
@@ -1621,61 +1795,38 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     back.position.set(0, 0, -3);
     scene.add(back);
 
-    // Try loading user model
-    let model = null;
-    let isUserModel = false;
+    let modelRoot = null;
+    let boneAnim = null;
     try {
-      updateProgress(15, 'Loading 3D model...');
-      const gltf = await new Promise((resolve, reject) => {
-        gltfLoader.load(
-          USER_MODEL,
-          (g) => resolve(g),
-          (xhr) => {
-            if (xhr.lengthComputable) {
-              const pct = 15 + (xhr.loaded / xhr.total) * 35;
-              updateProgress(pct, `Loading 3D model... ${Math.round((xhr.loaded/xhr.total)*100)}%`);
-            }
-          },
-          (err) => reject(err)
-        );
-      });
-      model = gltf.scene;
-      isUserModel = true;
-
-      // Center and scale the model
-      const box = new THREE.Box3().setFromObject(model);
+      updateProgress(10, 'Loading 3D model...');
+      const gltf = await loadUserModel();
+      modelRoot = gltf.scene;
+      const box = new THREE.Box3().setFromObject(modelRoot);
       const size = box.getSize(new THREE.Vector3()).length();
       const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center);
-
-      // Auto-fit to hero size
+      modelRoot.position.sub(center);
       const targetSize = isMobile ? 2.5 : 2.8;
-      model.scale.setScalar(targetSize / size);
-
-      // Improve any material on the model
-      model.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-          // Boost env map intensity for realism
-          if (child.material) {
-            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
-              child.material.envMapIntensity = 1.5;
-              if (child.material.roughness > 0.7) child.material.roughness = 0.5;
-            }
+      modelRoot.scale.setScalar(targetSize / size);
+      // Material polish
+      modelRoot.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+            child.material.envMapIntensity = 1.5;
+            if (child.material.roughness > 0.7) child.material.roughness = 0.5;
           }
         }
       });
-
-      // Position for hero (right side on desktop, centered on mobile)
-      if (!isMobile) model.position.x = 1.6;
-      scene.add(model);
-      console.log('✓ Loaded user 3D model:', USER_MODEL);
+      if (!isMobile) modelRoot.position.x = 1.6;
+      scene.add(modelRoot);
+      // Create the bone animator — it will be used in subtle mode for hero
+      boneAnim = makeBoneAnimator(modelRoot);
+      console.log('✓ Hero: loaded user 3D model with', boneAnim.parts.length, 'parts');
     } catch (e) {
-      console.warn('Could not load user model, using procedural fallback:', e.message);
-      model = createProceduralDevice();
-      if (!isMobile) model.position.x = 1.6;
-      scene.add(model);
+      console.warn('Could not load user model for hero:', e.message);
+      const fallback = createProceduralDevice();
+      if (!isMobile) fallback.position.x = 1.6;
+      scene.add(fallback);
+      modelRoot = fallback;
     }
 
     // Mouse-reactive
@@ -1685,20 +1836,16 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       mouse.ty = -(e.clientY / window.innerHeight) * 2 + 1;
     });
 
-    // Scroll-based fade out
     function checkVisibility() {
       const scrolled = window.pageYOffset;
       const heroHeight = document.querySelector('.hero')?.offsetHeight || 600;
-      if (scrolled > heroHeight * 0.5) {
-        canvas.classList.remove('hero-mode');
-      } else {
-        canvas.classList.add('hero-mode');
-      }
+      if (scrolled > heroHeight * 0.5) canvas.classList.remove('hero-mode');
+      else canvas.classList.add('hero-mode');
     }
     window.addEventListener('scroll', checkVisibility, { passive: true });
 
     // Animate
-    updateProgress(55, 'Preparing scene...');
+    updateProgress(60, 'Preparing scene...');
     const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
@@ -1706,19 +1853,25 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       mouse.x += (mouse.tx - mouse.x) * 0.05;
       mouse.y += (mouse.ty - mouse.y) * 0.05;
 
-      // Auto-rotate + mouse influence
-      model.rotation.y += 0.004;
-      model.rotation.x = mouse.y * 0.4;
+      // Subtle rotation
+      if (modelRoot) {
+        modelRoot.rotation.y += 0.003;
+        modelRoot.rotation.x = mouse.y * 0.35;
+        modelRoot.position.y = Math.sin(t * 0.8) * 0.12;
 
-      // Floating animation
-      model.position.y = Math.sin(t * 0.8) * 0.15;
-      model.rotation.z = Math.sin(t * 0.5) * 0.05;
-
-      // Scale pulse
-      const pulse = 1 + Math.sin(t * 1.5) * 0.02;
-      model.scale.multiplyScalar(pulse / (model.userData.lastPulse || 1));
-      model.userData.lastPulse = pulse;
-
+        // In hero, we apply a "subtle" version of the bone animator (stage 0 only — gentle idle)
+        if (boneAnim) {
+          // Subtle: just keep parts together but add tiny breathing
+          boneAnim.parts.forEach((part, i) => {
+            const orig = part.userData.originalPos;
+            const breathe = Math.sin(t * 1.2 + i * 0.5) * 0.008;
+            part.position.copy(orig);
+            part.position.y += breathe;
+            part.rotation.copy(part.userData.originalRot);
+            part.scale.copy(part.userData.originalScale);
+          });
+        }
+      }
       renderer.render(scene, camera);
     }
     animate();
@@ -1730,34 +1883,23 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     });
   }
 
-  // Procedural laser device (used as fallback)
+  // Procedural fallback (only used if user model fails to load)
   function createProceduralDevice() {
     const group = new THREE.Group();
-    // Handle (cylinder)
     const handleGeo = new THREE.CylinderGeometry(0.18, 0.22, 1.6, 32);
-    const handleMat = new THREE.MeshPhysicalMaterial({
-      color: 0xf5f5f5, metalness: 0.2, roughness: 0.3, clearcoat: 0.8
-    });
+    const handleMat = new THREE.MeshPhysicalMaterial({ color: 0xf5f5f5, metalness: 0.2, roughness: 0.3, clearcoat: 0.8 });
     const handle = new THREE.Mesh(handleGeo, handleMat);
     group.add(handle);
-    // Head (wider, rounded)
     const headGeo = new THREE.SphereGeometry(0.35, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-    const headMat = new THREE.MeshPhysicalMaterial({
-      color: 0xe8a5a5, metalness: 0.4, roughness: 0.25, clearcoat: 1
-    });
+    const headMat = new THREE.MeshPhysicalMaterial({ color: 0xe8a5a5, metalness: 0.4, roughness: 0.25, clearcoat: 1 });
     const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = 0.8;
-    head.rotation.x = Math.PI;
+    head.position.y = 0.8; head.rotation.x = Math.PI;
     group.add(head);
-    // Tip
     const tipGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.2, 32);
-    const tipMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd4848a, metalness: 0.7, roughness: 0.2, clearcoat: 1
-    });
+    const tipMat = new THREE.MeshPhysicalMaterial({ color: 0xd4848a, metalness: 0.7, roughness: 0.2, clearcoat: 1 });
     const tip = new THREE.Mesh(tipGeo, tipMat);
     tip.position.y = 1.1;
     group.add(tip);
-    // Base
     const baseGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 32);
     const base = new THREE.Mesh(baseGeo, handleMat);
     base.position.y = -0.85;
@@ -1766,7 +1908,7 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
   }
 
   // ============================================================
-  // SCROLL-DRIVEN 3D — Pinned through 4 stages
+  // SCROLL-DRIVEN 3D — Bone animator drives the 4 stages
   // ============================================================
   async function initScroll3D() {
     const section = document.getElementById('scroll3D');
@@ -1788,98 +1930,72 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     }
     resize();
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.3;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const k = new THREE.DirectionalLight(0xfff5e8, 1.6);
-    k.position.set(4, 5, 6);
-    scene.add(k);
-    const r = new THREE.DirectionalLight(0xe8a5a5, 1.2);
-    r.position.set(-4, 1, -2);
-    scene.add(r);
-    const b = new THREE.PointLight(0x7fa896, 0.8, 10);
-    b.position.set(0, -2, 4);
-    scene.add(b);
-    const p = new THREE.PointLight(0xd4a5c5, 0.6, 10);
-    p.position.set(2, 3, -3);
-    scene.add(p);
+    // Lighting — stage-aware
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const key = new THREE.DirectionalLight(0xfff5e8, 1.6);
+    key.position.set(4, 5, 6);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xe8a5a5, 1.2);
+    rim.position.set(-4, 1, -2);
+    scene.add(rim);
+    const sage = new THREE.PointLight(0x7fa896, 0.8, 10);
+    sage.position.set(0, -2, 4);
+    scene.add(sage);
+    const lilac = new THREE.PointLight(0xd4a5c5, 0.6, 10);
+    lilac.position.set(2, 3, -3);
+    scene.add(lilac);
+    // Tip spotlight (for stage 3 glow)
+    const tipLight = new THREE.PointLight(0xe8a5a5, 0, 8);
+    tipLight.position.set(0, 0, 2);
+    scene.add(tipLight);
 
-    const root = new THREE.Group();
-    scene.add(root);
-
-    // Try user model
-    let userModel = null;
+    let modelRoot = null;
+    let boneAnim = null;
     try {
-      updateProgress(70, 'Preparing scroll 3D...');
-      const gltf = await new Promise((resolve, reject) => {
-        gltfLoader.load(
-          USER_MODEL,
-          (g) => resolve(g),
-          (xhr) => {
-            if (xhr.lengthComputable) {
-              const pct = 70 + (xhr.loaded / xhr.total) * 20;
-              updateProgress(pct, `Loading 3D model... ${Math.round((xhr.loaded/xhr.total)*100)}%`);
-            }
-          },
-          (err) => reject(err)
-        );
-      });
-      userModel = gltf.scene;
-      const box = new THREE.Box3().setFromObject(userModel);
+      updateProgress(65, 'Preparing scroll 3D...');
+      const gltf = await loadUserModel();
+      // Clone the model since the hero may have a reference
+      modelRoot = gltf.scene.clone(true);
+      const box = new THREE.Box3().setFromObject(modelRoot);
       const size = box.getSize(new THREE.Vector3()).length();
       const center = box.getCenter(new THREE.Vector3());
-      userModel.position.sub(center);
-      userModel.scale.setScalar(4.5 / size);
-      userModel.traverse((child) => {
-        if (child.isMesh) {
-          if (child.material) {
-            if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
-              child.material.envMapIntensity = 1.8;
-            }
+      modelRoot.position.sub(center);
+      modelRoot.scale.setScalar(4.5 / size);
+      modelRoot.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.material.isMeshStandardMaterial || child.material.isMeshPhysicalMaterial) {
+            child.material.envMapIntensity = 1.8;
           }
         }
       });
-      root.add(userModel);
-      console.log('✓ Loaded user 3D model for scroll section');
+      scene.add(modelRoot);
+      boneAnim = makeBoneAnimator(modelRoot);
+      console.log('✓ Scroll: loaded user 3D model with', boneAnim.parts.length, 'parts');
     } catch (e) {
-      console.warn('Scroll 3D using procedural fallback:', e.message);
-      // Procedural crystal (the old default)
-      const crystalGeo = new THREE.IcosahedronGeometry(1.2, 1);
-      const crystalMat = new THREE.MeshPhysicalMaterial({
-        color: 0xe8a5a5, metalness: 0.2, roughness: 0.05,
-        transmission: 0.7, thickness: 1.5, ior: 1.5,
-        clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 1.5
-      });
-      const crystal = new THREE.Mesh(crystalGeo, crystalMat);
-      root.add(crystal);
+      console.warn('Could not load user model for scroll:', e.message);
+      const fallback = createProceduralDevice();
+      const box = new THREE.Box3().setFromObject(fallback);
+      const size = box.getSize(new THREE.Vector3()).length();
+      const center = box.getCenter(new THREE.Vector3());
+      fallback.position.sub(center);
+      fallback.scale.setScalar(4.5 / size);
+      scene.add(fallback);
     }
 
-    // Orbiting wavelength rings
-    const rings = [];
-    const ringColors = [0xd4a5c5, 0xe8a5a5, 0xe8b896, 0xa8c5b5];
-    for (let i = 0; i < 4; i++) {
-      const ringGeo = new THREE.TorusGeometry(1.8, 0.04, 16, 100);
-      const ringMat = new THREE.MeshBasicMaterial({ color: ringColors[i], transparent: true, opacity: 0.7 });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.rotation.x = Math.random() * Math.PI;
-      ring.rotation.y = Math.random() * Math.PI;
-      root.add(ring);
-      rings.push({ mesh: ring, axis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(), baseSpeed: 0.2 + i * 0.1 });
-    }
-
-    // Floating particles
-    const particleCount = 200;
+    // Floating particles (kept — pure visual, not for animation)
+    const particleCount = 120;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
-      positions[i*3] = (Math.random() - 0.5) * 7;
-      positions[i*3+1] = (Math.random() - 0.5) * 7;
-      positions[i*3+2] = (Math.random() - 0.5) * 7;
+      positions[i*3] = (Math.random() - 0.5) * 8;
+      positions[i*3+1] = (Math.random() - 0.5) * 8;
+      positions[i*3+2] = (Math.random() - 0.5) * 8;
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const particleMat = new THREE.PointsMaterial({ color: 0xfce4e4, size: 0.04, transparent: true, opacity: 0.7 });
+    const particleMat = new THREE.PointsMaterial({ color: 0xfce4e4, size: 0.04, transparent: true, opacity: 0.6 });
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
@@ -1904,23 +2020,26 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
-      // Rotate root model
-      root.rotation.y = progress * Math.PI * 2;
-      root.rotation.x = t * 0.15;
-      const scale = 1 + Math.sin(t * 1.5) * 0.03 + progress * 0.2;
-      root.scale.setScalar(scale);
-
-      // Rings orbit
-      rings.forEach((r, i) => {
-        r.mesh.rotateOnAxis(r.axis, 0.008 * (r.baseSpeed + progress * 0.5));
-        r.mesh.material.opacity = 0.4 + Math.sin(t * 2 + i) * 0.3;
-      });
+      // Apply the bone-driven animator to the actual model parts
+      if (boneAnim) {
+        const result = boneAnim.apply(progress);
+        // Pulse the tip light during stage 3
+        if (result.stage === 3) {
+          tipLight.intensity = 2 + Math.sin(t * 5) * 0.8;
+        } else {
+          tipLight.intensity *= 0.92; // decay
+        }
+      } else if (modelRoot) {
+        // Fallback procedural rotation
+        modelRoot.rotation.y = progress * Math.PI * 2;
+      }
 
       particles.rotation.y = t * 0.05;
-
-      // Camera dolly with progress
-      camera.position.z = 5 - progress * 1.2;
-      camera.position.y = progress * 0.5;
+      // Camera dolly: pull back during explosion stage, then push in for finale
+      let camZ = 5 - progress * 1.5;
+      if (progress > 0.5) camZ = 5 - 1.5 + (progress - 0.5) * 1.5; // pull back during explode
+      camera.position.z = camZ;
+      camera.position.y = progress * 0.4;
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
@@ -1943,7 +2062,6 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
         setTimeout(hideLoader, 400);
         return;
       }
-      // Init both canvases in parallel for speed
       await Promise.all([initHero3D(), initScroll3D()]);
       updateProgress(100, 'Ready!');
       setTimeout(hideLoader, 300);
