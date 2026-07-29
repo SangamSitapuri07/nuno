@@ -1678,13 +1678,14 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
     const bodyParts = parts.slice(0, -1);
 
     // Define per-part disassembly DIRECTION (where each part moves when exploded)
-    // This is a CAD-style directional separation — each part goes a unique way
+    // CAD-style directional separation — each part goes to a unique corner
+    // Using larger values to make the spread more dramatic and visible
     const disassembleDirections = {
-      'Object_4': new THREE.Vector3(-0.8, -1.2, 0.3),  // bottom-left, slightly forward
-      'Object_5': new THREE.Vector3(0.8, -1.2, 0.3),   // bottom-right, slightly forward
-      'Object_6': new THREE.Vector3(-1.2, 0.8, 0.3),   // top-left, slightly forward
-      'Object_7': new THREE.Vector3(1.2, 0.8, 0.3),    // top-right, slightly forward
-      'Object_8': new THREE.Vector3(0, 0, 1.8),        // tip shoots straight forward (toward viewer)
+      'Object_4': new THREE.Vector3(-2.2, -1.6, 1.0),  // FAR bottom-left
+      'Object_5': new THREE.Vector3(2.2, -1.6, 1.0),   // FAR bottom-right
+      'Object_6': new THREE.Vector3(-2.2, 1.6, 1.0),   // FAR top-left
+      'Object_7': new THREE.Vector3(2.2, 1.6, 1.0),    // FAR top-right
+      'Object_8': new THREE.Vector3(0, 0, 3.0),        // tip shoots WAY forward (toward viewer)
     };
 
     // Default fallback direction (if part name not in map)
@@ -2074,12 +2075,14 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
 
-      // Continuous horizontal rotation that NEVER stops
-      // The whole model (and all its parts) rotates around Y constantly
-      // Speed varies with scroll progress for dramatic effect
-      let rotSpeed = 0.15; // base rotation
-      if (progress > 0.35) rotSpeed = 0.4; // faster during disassembly
-      if (progress > 0.75) rotSpeed = 0.3; // settle during reassembly
+      // Rotation: fast during "rotating" stage, SLOW during disassembly/exploded so the 4 corners are visible, then resume
+      let rotSpeed = 0;
+      if (progress < 0.15) rotSpeed = 0.1;        // idle - slow
+      else if (progress < 0.35) rotSpeed = 0.5;   // rotating stage - FAST (show the model)
+      else if (progress < 0.55) rotSpeed = 0.05;  // disassembling - VERY SLOW (let corners be visible)
+      else if (progress < 0.75) rotSpeed = 0.15;  // exploded - slow gentle drift
+      else if (progress < 0.90) rotSpeed = 0.05;  // reassembling - slow
+      else rotSpeed = 0.3;                        // final - medium celebratory spin
       if (modelRoot) modelRoot.rotation.y += rotSpeed * 0.016;
 
       // Apply the bone-driven animator to the actual model parts
@@ -2100,13 +2103,13 @@ console.log('%cPowered by scroll-based animations + Three.js 3D','color:#d4848a;
       }
 
       particles.rotation.y = t * 0.05;
-      // Camera: pull back during disassembly to see all parts, then push in for finale
+      // Camera: pull WAY back during disassembly so all 5 parts (4 corners + tip forward) are clearly visible
       let camZ = 5;
       if (progress > 0.35 && progress < 0.75) {
-        // Pull back to see the spread
-        camZ = 5 + 1.5;
-      } else if (progress >= 0.75) {
-        // Push in for the final assembly close-up
+        // Pull back significantly to see the spread corners
+        camZ = 5 + 3.0;
+      } else if (progress >= 0.75 && progress < 0.90) {
+        // Push in slowly for the final assembly
         camZ = 5 - 0.8;
       }
       camera.position.z += (camZ - camera.position.z) * 0.05;
