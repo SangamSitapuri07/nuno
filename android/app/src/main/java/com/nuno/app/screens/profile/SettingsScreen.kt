@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.GameDimens
+import com.nuno.app.core.designsystem.components.GameButton
 import com.nuno.app.core.designsystem.components.GamePanel
+import com.nuno.app.core.designsystem.components.ButtonStyle
 
 @Composable
 fun SettingsScreen(
@@ -42,7 +44,7 @@ fun SettingsScreen(
             .background(GameColors.Background)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
-            // Left - Categories
+            // Left - Categories (#25 in reference)
             Column(
                 modifier = Modifier
                     .width(180.dp)
@@ -79,7 +81,6 @@ fun SettingsScreen(
             ) {
                 when (selectedCategory) {
                     0 -> {
-                        // Sound settings
                         SettingSlider("Game Sound", musicVolume) { musicVolume = it }
                         SettingSlider("Sound Effects", sfxVolume) { sfxVolume = it }
                         SettingSlider("Voice Volume", voiceVolume) { voiceVolume = it }
@@ -105,6 +106,15 @@ fun SettingsScreen(
                         SettingToggle("Dark Mode", darkMode) { darkMode = it }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                GameButton(
+                    text = "LOGOUT",
+                    onClick = onLogout,
+                    style = ButtonStyle.DANGER,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

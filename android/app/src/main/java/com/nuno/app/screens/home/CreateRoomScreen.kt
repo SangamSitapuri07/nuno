@@ -117,7 +117,7 @@ fun CreateRoomScreen(
                             )
                         )
                     },
-                    style = ButtonStyle.GREEN,
+                    style = ButtonStyle.GOLD,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

@@ -55,7 +55,7 @@ fun PlayMenuScreen(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "PLAY",
+                    text = "PLAY MENU",
                     color = GameColors.TextWhite,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
@@ -78,7 +78,8 @@ fun PlayMenuScreen(
                         icon = Icons.Default.FlashOn,
                         title = "QUICK MATCH",
                         description = "Find match with random players",
-                        gradient = listOf(GameColors.Blue, GameColors.Purple),
+                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
+                        iconBg = Color(0xFF4361EE),
                         onClick = onQuickMatch,
                         modifier = Modifier.weight(1f)
                     )
@@ -86,7 +87,8 @@ fun PlayMenuScreen(
                         icon = Icons.Default.Login,
                         title = "JOIN ROOM",
                         description = "Join with room code",
-                        gradient = listOf(GameColors.Green, Color(0xFF00B862)),
+                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
+                        iconBg = Color(0xFF4361EE),
                         onClick = onJoinRoom,
                         modifier = Modifier.weight(1f)
                     )
@@ -96,10 +98,11 @@ fun PlayMenuScreen(
                     verticalArrangement = Arrangement.spacedBy(GameDimens.paddingLg)
                 ) {
                     PlayMenuItem(
-                        icon = Icons.Default.Add,
+                        icon = Icons.Default.AddHome,
                         title = "CREATE ROOM",
-                        description = "Create a room and invite players",
-                        gradient = listOf(GameColors.Gold, GameColors.GoldDark),
+                        description = "Create a room and invite friends",
+                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
+                        iconBg = Color(0xFF4361EE),
                         onClick = onCreateRoom,
                         modifier = Modifier.weight(1f)
                     )
@@ -107,7 +110,8 @@ fun PlayMenuScreen(
                         icon = Icons.Default.History,
                         title = "MATCH HISTORY",
                         description = "View your recent matches",
-                        gradient = listOf(GameColors.SurfaceLight, GameColors.Surface),
+                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
+                        iconBg = Color(0xFF4361EE),
                         onClick = onMatchHistory,
                         modifier = Modifier.weight(1f)
                     )
@@ -129,12 +133,13 @@ private fun PlayMenuItem(
     title: String,
     description: String,
     gradient: List<Color>,
+    iconBg: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     GamePanel(
         modifier = modifier.fillMaxWidth(),
-        borderColor = gradient[0].copy(alpha = 0.5f),
+        borderColor = Color(0xFF4A5580).copy(alpha = 0.5f),
         onClick = onClick
     ) {
         Row(
@@ -145,15 +150,16 @@ private fun PlayMenuItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .shadow(8.dp, RoundedCornerShape(GameDimens.radiusMd), spotColor = gradient[0])
+                    .size(52.dp)
+                    .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = iconBg)
                     .background(
-                        brush = Brush.linearGradient(gradient),
-                        shape = RoundedCornerShape(GameDimens.radiusMd)
-                    ),
+                        color = iconBg,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(28.dp))
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
             }
 
             Spacer(modifier = Modifier.width(GameDimens.paddingLg))
@@ -166,6 +172,7 @@ private fun PlayMenuItem(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 1.sp
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = description,
                     color = GameColors.TextGray,

@@ -1,6 +1,7 @@
 package com.nuno.app.features.voice
 
 import android.content.Context
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.util.Log
@@ -21,6 +22,7 @@ class WebRTCManager @Inject constructor(
     private val eglBase: EglBase = EglBase.create()
     private var peerConnectionFactory: PeerConnectionFactory? = null
     private val peerConnections = mutableMapOf<String, PeerConnection>()
+    private val pendingIceCandidates = mutableMapOf<String, MutableList<IceCandidate>>()
     private var localAudioTrack: AudioTrack? = null
     private var isMuted = false
     private var isInitialized = false
@@ -68,33 +70,30 @@ class WebRTCManager @Inject constructor(
             audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
             audioManager?.let { am ->
-                // Set communication mode for voice chat
                 am.mode = AudioManager.MODE_IN_COMMUNICATION
 
-                // Route to speaker (not earpiece)
-                am.isSpeakerphoneOn = true
-
-                // Handle Bluetooth
-                if (am.isBluetoothScoAvailableOffCall || am.isBluetoothA2dpOn) {
-                    // If Bluetooth is connected, use it
-                    try {
-                        am.startBluetoothSco()
-                        am.isBluetoothScoOn = true
-                        Log.d(TAG, "Bluetooth audio enabled")
-                    } catch (e: Exception) {
-                        // Bluetooth not available, use speaker
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val devices = am.availableCommunicationDevices
+                    val speakerDevice = devices.find { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER }
+                    if (speakerDevice != null) {
+                        val result = am.setCommunicationDevice(speakerDevice)
+                        Log.d(TAG, "Android 12+ setCommunicationDevice speaker result: $result")
+                    } else {
+                        @Suppress("DEPRECATION")
                         am.isSpeakerphoneOn = true
-                        Log.d(TAG, "Bluetooth not available, using speaker")
                     }
                 } else {
+                    @Suppress("DEPRECATION")
                     am.isSpeakerphoneOn = true
                 }
 
-                // Set volume
-                val maxVolume = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL)
-                am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVolume, 0)
+                val maxVoice = am.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL)
+                am.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxVoice, 0)
 
-                Log.d(TAG, "Audio manager configured: speaker=${am.isSpeakerphoneOn}, mode=${am.mode}")
+                val maxMusic = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                am.setStreamVolume(AudioManager.STREAM_MUSIC, maxMusic, 0)
+
+                Log.d(TAG, "Audio manager configured for Android ${Build.VERSION.SDK_INT}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting up audio manager", e)
@@ -148,6 +147,17 @@ class WebRTCManager @Inject constructor(
         dynamicIceServers = servers
     }
 
+    fun getOrCreatePeerConnection(userId: String): PeerConnection? {
+        if (!isInitialized) initialize()
+
+        val existing = peerConnections[userId]
+        if (existing != null && existing.signalingState() != PeerConnection.SignalingState.CLOSED) {
+            return existing
+        }
+
+        return createPeerConnection(userId)
+    }
+
     fun createPeerConnection(userId: String): PeerConnection? {
         if (!isInitialized) initialize()
 
@@ -183,7 +193,8 @@ class WebRTCManager @Inject constructor(
                 Log.d(TAG, "Stream from $userId, audio tracks: ${stream.audioTracks.size}")
                 stream.audioTracks.forEach { track ->
                     track.setEnabled(true)
-                    Log.d(TAG, "Enabled audio track from $userId")
+                    track.setVolume(10.0)
+                    Log.d(TAG, "Enabled remote audio track from $userId with volume 10.0")
                 }
                 onRemoteStreamCallback?.invoke(userId, stream)
             }
@@ -191,7 +202,10 @@ class WebRTCManager @Inject constructor(
             override fun onTrack(transceiver: RtpTransceiver) {
                 Log.d(TAG, "Track received from $userId: ${transceiver.mediaType}")
                 if (transceiver.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO) {
-                    transceiver.receiver.track()?.setEnabled(true)
+                    val track = transceiver.receiver.track() as? AudioTrack
+                    track?.setEnabled(true)
+                    track?.setVolume(10.0)
+                    Log.d(TAG, "Enabled remote audio track transceiver from $userId with volume 10.0")
                 }
             }
 
@@ -298,7 +312,14 @@ class WebRTCManager @Inject constructor(
 
     fun setRemoteDescription(userId: String, sdp: SessionDescription) {
         peerConnections[userId]?.setRemoteDescription(object : SdpObserver {
-            override fun onSetSuccess() { Log.d(TAG, "Remote desc set for $userId") }
+            override fun onSetSuccess() {
+                Log.d(TAG, "Remote desc set for $userId")
+                pendingIceCandidates[userId]?.let { list ->
+                    list.forEach { candidate -> peerConnections[userId]?.addIceCandidate(candidate) }
+                    pendingIceCandidates.remove(userId)
+                    Log.d(TAG, "Drained ${list.size} pending ICE candidates for $userId")
+                }
+            }
             override fun onCreateSuccess(p0: SessionDescription?) {}
             override fun onSetFailure(error: String?) { Log.e(TAG, "Set remote desc failed: $error") }
             override fun onCreateFailure(p0: String?) {}
@@ -306,7 +327,13 @@ class WebRTCManager @Inject constructor(
     }
 
     fun addIceCandidate(userId: String, candidate: IceCandidate) {
-        peerConnections[userId]?.addIceCandidate(candidate)
+        val pc = peerConnections[userId]
+        if (pc != null && pc.remoteDescription != null) {
+            pc.addIceCandidate(candidate)
+        } else {
+            pendingIceCandidates.getOrPut(userId) { mutableListOf() }.add(candidate)
+            Log.d(TAG, "Queued ICE candidate for $userId")
+        }
     }
 
     fun setMuted(muted: Boolean) {
@@ -356,6 +383,7 @@ class WebRTCManager @Inject constructor(
     fun closeConnection(userId: String) {
         try { peerConnections[userId]?.close() } catch (e: Exception) {}
         peerConnections.remove(userId)
+        pendingIceCandidates.remove(userId)
     }
 
     fun closeAll() {

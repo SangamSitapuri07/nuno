@@ -116,195 +116,67 @@ fun GameplayScreen(
             }
 
             else -> {
-                // MAIN GAME UI
+                // MAIN GAME UI - Delegate directly to GameTableScreen
                 val gameState = uiState.gameState!!
                 val isMyTurn = gameState.currentTurn == uiState.currentUserId
-                val opponents = gameState.playerCardCounts.filter { it.key != uiState.currentUserId }
-
-                Row(modifier = Modifier.fillMaxSize()) {
-                    // LEFT SIDEBAR
-                    Column(
-                        modifier = Modifier
-                            .width(60.dp)
-                            .fillMaxHeight()
-                            .background(GameColors.BackgroundDark.copy(alpha = 0.7f))
-                            .padding(vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // Mic button
-                        val voiceState by voiceViewModel.uiState.collectAsState()
-
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        if (voiceState.isMicMuted) GameColors.Red else GameColors.Surface,
-                                        CircleShape
-                                    )
-                                    .clickable { voiceViewModel.toggleMic() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    if (voiceState.isMicMuted) Icons.Default.MicOff else Icons.Default.Mic,
-                                    null,
-                                    tint = if (voiceState.isMicMuted) Color.White else GameColors.Cyan,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Text(
-                                if (voiceState.isMicMuted) "Muted" else "Mic",
-                                color = if (voiceState.isMicMuted) GameColors.Red else GameColors.TextGray,
-                                fontSize = 8.sp
-                            )
-                        }
-
-                        // Speaker button
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(
-                                        if (voiceState.isSpeakerMuted) GameColors.Red else GameColors.Surface,
-                                        CircleShape
-                                    )
-                                    .clickable { voiceViewModel.toggleSpeaker() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    if (voiceState.isSpeakerMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
-                                    null,
-                                    tint = if (voiceState.isSpeakerMuted) Color.White else GameColors.Cyan,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Text(
-                                if (voiceState.isSpeakerMuted) "Off" else "Sound",
-                                color = if (voiceState.isSpeakerMuted) GameColors.Red else GameColors.TextGray,
-                                fontSize = 8.sp
-                            )
-                        }
-
-                        SideBtn(Icons.Default.Chat, "Chat", GameColors.Blue) { showChat = true }
-                        SideBtn(Icons.Default.Message, "Quick", GameColors.Green) { showQuickChat = true }
-                        SideBtn(Icons.Default.EmojiEmotions, "Emotes", GameColors.Gold) { showQuickChat = true }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        if (viewModel.getSortedHand().size == 2 && isMyTurn) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .shadow(8.dp, CircleShape, spotColor = GameColors.Red)
-                                    .background(GameColors.Red, CircleShape)
-                                    .clickable { viewModel.callUno() },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("UNO!", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-
-                        SideBtn(Icons.Default.Menu, "Menu", GameColors.TextGray) { showMenu = true }
+                val opponentsList = gameState.playerCardCounts.filter { it.key != uiState.currentUserId }
+                    .map { (uid, count) ->
+                        val pInfo = gameState.playerNames[uid]
+                        com.nuno.app.screens.game.OpponentData(
+                            userId = uid,
+                            username = pInfo?.username ?: "Player",
+                            cardCount = count,
+                            isCurrentTurn = uid == gameState.currentTurn
+                        )
                     }
 
-                    // MAIN AREA
-                    Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(8.dp)) {
-                        // Opponents
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            opponents.entries.take(6).forEach { (uid, count) ->
-                                val name = gameState.playerNames[uid]?.username ?: "Player"
-                                val isTurn = uid == gameState.currentTurn
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    GameAvatar(username = name, size = 44.dp, borderColor = if (isTurn) GameColors.Gold else GameColors.Blue)
-                                    Text(name, color = GameColors.TextWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                                    Box(modifier = Modifier.background(GameColors.Surface, RoundedCornerShape(8.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                                        Text("🎴 $count", color = GameColors.Cyan, fontSize = 11.sp, fontWeight = FontWeight.Black)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Turn indicator
-                        if (isMyTurn) {
-                            Box(modifier = Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
-                                Text("YOUR TURN", color = GameColors.Green, fontSize = 14.sp, fontWeight = FontWeight.Black,
-                                    modifier = Modifier.background(GameColors.Green.copy(alpha = 0.2f), RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 4.dp))
-                            }
-                        }
-
-                        // CENTER PILES
-                        Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(32.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Box(
-                                        modifier = Modifier.size(width = 90.dp, height = 130.dp)
-                                            .shadow(12.dp, RoundedCornerShape(10.dp))
-                                            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(GameColors.Blue, GameColors.Purple)), RoundedCornerShape(10.dp))
-                                            .clickable(enabled = isMyTurn) { viewModel.drawCard() },
-                                        contentAlignment = Alignment.Center
-                                    ) { Text("NUNO", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black) }
-                                    Text("${gameState.drawPileCount}", color = GameColors.TextGray, fontSize = 10.sp)
-                                }
-
-                                Text(if (gameState.direction == "CLOCKWISE") "→" else "←", color = GameColors.Gold, fontSize = 32.sp, fontWeight = FontWeight.Black)
-
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    gameState.topCard?.let { card ->
-                                        val cc = getCardColor(card.color)
-                                        val ct = getCardText(card.value)
-                                        Box(
-                                            modifier = Modifier.size(width = 90.dp, height = 130.dp).shadow(8.dp, RoundedCornerShape(10.dp)).background(cc, RoundedCornerShape(10.dp)),
-                                            contentAlignment = Alignment.Center
-                                        ) { Text(ct, color = if (card.color == "YELLOW") Color.Black else Color.White, fontSize = 38.sp, fontWeight = FontWeight.Black) }
-                                    }
-                                    Text(gameState.currentColor, color = getCardColor(gameState.currentColor), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-
-                        // HAND
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(horizontal = 8.dp)) {
-                            items(viewModel.getSortedHand()) { card ->
-                                val cc = getCardColor(card.color)
-                                val ct = getCardText(card.value)
-                                val playable = isMyTurn && (card.type == "WILD" || card.color == gameState.currentColor || card.value == gameState.currentValue)
-                                Box(
-                                    modifier = Modifier.size(width = 65.dp, height = 95.dp)
-                                        .shadow(if (playable) 12.dp else 4.dp, RoundedCornerShape(8.dp), spotColor = if (playable) GameColors.Cyan else Color.Black)
-                                        .background(cc, RoundedCornerShape(8.dp))
-                                        .clickable { viewModel.playCard(card) },
-                                    contentAlignment = Alignment.Center
-                                ) { Text(ct, color = if (card.color == "YELLOW") Color.Black else Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black) }
-                            }
-                        }
-                    }
-
-                    // RIGHT SIDEBAR
-                    Column(modifier = Modifier.width(100.dp).fillMaxHeight().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GamePanel(borderColor = if (isMyTurn) GameColors.Green else GameColors.BorderPurple.copy(alpha = 0.3f)) {
-                            Column(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(if (isMyTurn) "YOUR TURN" else "OPPONENT", color = if (isMyTurn) GameColors.Green else GameColors.TextGray, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                Text("${uiState.remainingTime}s", color = GameColors.TextWhite, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-                        GamePanel {
-                            Column(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("DIRECTION", color = GameColors.TextGray, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                Text(if (gameState.direction == "CLOCKWISE") "↻" else "↺", color = GameColors.Cyan, fontSize = 24.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-                        GamePanel {
-                            Column(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("TURNS", color = GameColors.TextGray, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                Text("${gameState.totalTurns}", color = GameColors.TextWhite, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                            }
-                        }
-                    }
+                val myHandData = viewModel.getSortedHand().map { c ->
+                    com.nuno.app.screens.game.GameCardData(
+                        cardId = c.cardId,
+                        color = c.color,
+                        value = c.value,
+                        type = c.type
+                    )
                 }
+
+                val topCardData = gameState.topCard?.let { c ->
+                    com.nuno.app.screens.game.GameCardData(
+                        cardId = c.cardId,
+                        color = c.color,
+                        value = c.value,
+                        type = c.type
+                    )
+                }
+
+                val voiceState by voiceViewModel.uiState.collectAsState()
+
+                com.nuno.app.screens.game.GameTableScreen(
+                    opponents = opponentsList,
+                    myHand = myHandData,
+                    topCard = topCardData,
+                    currentColor = gameState.currentColor,
+                    drawPileCount = gameState.drawPileCount,
+                    isMyTurn = isMyTurn,
+                    remainingTime = uiState.remainingTime,
+                    direction = gameState.direction,
+                    totalTurns = gameState.totalTurns,
+                    roomCode = gameState.roomId.take(7).uppercase(),
+                    isMicMuted = voiceState.isMicMuted,
+                    isSpeakerMuted = voiceState.isSpeakerMuted,
+                    onPlayCard = { cardData ->
+                        val card = gameState.myHand.find { it.cardId == cardData.cardId }
+                        if (card != null) viewModel.playCard(card)
+                    },
+                    onDrawCard = { viewModel.drawCard() },
+                    onChat = { showChat = true },
+                    onQuickChat = { showQuickChat = true },
+                    onVoice = { voiceViewModel.toggleMic() },
+                    onSpeaker = { voiceViewModel.toggleSpeaker() },
+                    onEmotes = { showQuickChat = true },
+                    onMenu = { showMenu = true },
+                    onUnoCall = { viewModel.callUno() },
+                    showUnoButton = myHandData.size <= 2
+                )
             }
         }
         // ═══ FLOATING CHAT BUBBLES ═══

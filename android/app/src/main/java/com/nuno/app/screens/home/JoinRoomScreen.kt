@@ -88,17 +88,15 @@ fun JoinRoomScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Text input field - uses system keyboard
                     OutlinedTextField(
                         value = code,
                         onValueChange = { newValue ->
-                            // Only allow alphanumeric, max 5 characters, auto uppercase
-                            val filtered = newValue.filter { it.isLetterOrDigit() }.take(5).uppercase()
+                            val filtered = newValue.filter { it.isLetterOrDigit() }.take(6).uppercase()
                             code = filtered
                         },
                         placeholder = {
                             Text(
-                                "ABX72",
+                                "AB12C3",
                                 color = GameColors.TextDark,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Black,
@@ -132,8 +130,8 @@ fun JoinRoomScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "${code.length}/5 characters",
-                        color = if (code.length == 5) GameColors.Green else GameColors.TextGray,
+                        text = "${code.length}/6 characters",
+                        color = if (code.length >= 5) GameColors.Green else GameColors.TextGray,
                         fontSize = 11.sp
                     )
 
@@ -142,11 +140,11 @@ fun JoinRoomScreen(
                     GameButton(
                         text = "JOIN ROOM",
                         onClick = {
-                            if (code.length == 5) onJoin(code)
+                            if (code.isNotEmpty()) onJoin(code)
                         },
                         style = ButtonStyle.GREEN,
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = code.length == 5
+                        enabled = code.isNotEmpty()
                     )
                 }
             }

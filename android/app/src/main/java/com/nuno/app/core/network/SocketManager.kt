@@ -69,7 +69,7 @@ class SocketManager @Inject constructor(
                 reconnectionDelay = 2000
                 reconnectionDelayMax = 5000
                 timeout = 20000
-                transports = arrayOf("websocket")
+                transports = arrayOf("polling", "websocket")
                 forceNew = false
             }
 
@@ -131,6 +131,7 @@ class SocketManager @Inject constructor(
             "invite.sent",
             "friend.statusUpdated",
             "friend.requestAccepted",
+            "friend.requestReceived",
 
 
             // Rooms
@@ -165,6 +166,8 @@ class SocketManager @Inject constructor(
             Constants.EVENT_CHAT_RECEIVED,
             Constants.EVENT_QUICK_CHAT,
             Constants.EVENT_EMOTE_RECEIVED,
+            "dm.received",
+            "dm.sent",
 
             // Voice - make sure ALL these are here
             "voice.joined",
@@ -183,6 +186,13 @@ class SocketManager @Inject constructor(
             socket?.on(eventName) { args ->
                 val data = args.getOrNull(0) as? JSONObject
                 Log.d(TAG, "Received event: $eventName")
+                if (eventName == Constants.EVENT_ERROR) {
+                    val code = data?.optString("code")
+                    if (code == "TOKEN_EXPIRED" || code == "AUTH_FAILED") {
+                        Log.w(TAG, "Socket token error ($code), reconnecting with fresh token...")
+                        reconnectWithFreshToken()
+                    }
+                }
                 emitEvent(eventName, data)
             }
         }

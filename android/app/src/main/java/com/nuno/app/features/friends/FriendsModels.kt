@@ -9,6 +9,7 @@ data class Friend(
     val username: String,
     val avatarUrl: String? = null,
     val status: String,
+    val roomCode: String? = null,
     val lastOnline: String? = null,
     val currentRank: String = "BRONZE",
     val currentGame: String? = null,

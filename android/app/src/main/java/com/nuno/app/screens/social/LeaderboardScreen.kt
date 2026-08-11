@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -61,7 +60,7 @@ fun LeaderboardScreen(
                 Text(text = seasonInfo, color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
 
-            // Tabs
+            // Tabs (#22 in reference)
             Row(
                 modifier = Modifier.padding(horizontal = GameDimens.paddingXl),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

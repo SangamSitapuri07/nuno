@@ -14,6 +14,14 @@ import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.update
 
+data class DirectMessage(
+    val fromUserId: String,
+    val fromUsername: String,
+    val message: String,
+    val timestamp: Long,
+    val isMe: Boolean
+)
+
 @HiltViewModel
 class FriendsViewModel @Inject constructor(
     private val friendsRepository: FriendsRepository,
@@ -29,6 +37,9 @@ class FriendsViewModel @Inject constructor(
     private val _searchState = MutableStateFlow<UiState<List<PlayerSearchResult>>>(UiState.Idle)
     val searchState: StateFlow<UiState<List<PlayerSearchResult>>> = _searchState.asStateFlow()
 
+    private val _dmsState = MutableStateFlow<Map<String, List<DirectMessage>>>(emptyMap())
+    val dmsState: StateFlow<Map<String, List<DirectMessage>>> = _dmsState.asStateFlow()
+
     private val _actionMessage = MutableStateFlow<String?>(null)
     val actionMessage: StateFlow<String?> = _actionMessage.asStateFlow()
 
@@ -36,6 +47,18 @@ class FriendsViewModel @Inject constructor(
         loadFriends()
         loadRequests()
         observeFriendEvents()
+        startPeriodicRefresh()
+    }
+
+    private fun startPeriodicRefresh() {
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(10_000)
+                if (socketManager.isConnected()) {
+                    loadFriends()
+                }
+            }
+        }
     }
 
     fun loadFriends() {
@@ -76,23 +99,48 @@ class FriendsViewModel @Inject constructor(
                         val data = event.data ?: return@collect
                         val userId = data.optString("userId")
                         val status = data.optString("status")
+                        val roomCode = if (data.has("roomCode")) data.optString("roomCode") else null
                         _friendsState.update { current ->
                             if (current is UiState.Success) {
                                 UiState.Success(current.data.map { f ->
-                                    if (f.userId == userId) f.copy(status = status) else f
+                                    if (f.userId == userId) {
+                                        f.copy(
+                                            status = status,
+                                            roomCode = roomCode ?: f.roomCode
+                                        )
+                                    } else f
                                 })
                             } else current
                         }
+                    }
+                    "friend.requestReceived" -> {
+                        loadRequests()
+                        _actionMessage.value = "New friend request received!"
                     }
                     "friend.requestAccepted" -> {
                         loadFriends()
                         loadRequests()
                         _actionMessage.value = "Friend request accepted!"
                     }
+                    "dm.received" -> {
+                        val data = event.data ?: return@collect
+                        val fromUserId = data.optString("fromUserId")
+                        val fromUsername = data.optString("fromUsername")
+                        val message = data.optString("message")
+                        val timestamp = data.optLong("timestamp", System.currentTimeMillis())
+                        if (fromUserId.isNotEmpty() && message.isNotEmpty()) {
+                            val dm = DirectMessage(fromUserId, fromUsername, message, timestamp, isMe = false)
+                            _dmsState.update { current ->
+                                val list = current[fromUserId] ?: emptyList()
+                                current + (fromUserId to (list + dm))
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
     fun searchPlayers(query: String) {
         if (query.length < 2) {
             _searchState.value = UiState.Idle
@@ -161,6 +209,23 @@ class FriendsViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun sendDm(targetUserId: String, messageText: String) {
+        val text = messageText.trim()
+        if (targetUserId.isEmpty() || text.isEmpty()) return
+
+        val dm = DirectMessage("me", "Me", text, System.currentTimeMillis(), isMe = true)
+        _dmsState.update { current ->
+            val list = current[targetUserId] ?: emptyList()
+            current + (targetUserId to (list + dm))
+        }
+
+        val data = org.json.JSONObject().apply {
+            put("targetUserId", targetUserId)
+            put("message", text)
+        }
+        socketManager.emit("dm.send", data)
     }
 
     fun clearMessage() {

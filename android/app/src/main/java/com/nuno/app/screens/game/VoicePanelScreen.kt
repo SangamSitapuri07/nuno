@@ -134,7 +134,7 @@ private fun VoiceParticipantRow(participant: VoiceParticipant) {
             modifier = Modifier.weight(1f)
         )
 
-        // Audio level indicator
+        // Audio level indicator (#15 in reference)
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             repeat(4) { i ->
                 Box(

@@ -19,8 +19,6 @@ import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.GameDimens
 import com.nuno.app.core.designsystem.components.*
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.unit.dp
-
 
 @Composable
 fun ProfileScreen(
@@ -46,7 +44,7 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(bottom = GameDimens.bottomNavHeight)
         ) {
-            // Left sidebar tabs
+            // Left sidebar tabs (#19 in reference)
             Column(
                 modifier = Modifier
                     .width(160.dp)
@@ -112,7 +110,7 @@ private fun ProfileTabItem(label: String, isSelected: Boolean, onClick: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isSelected) GameColors.Blue.copy(alpha = 0.3f) else android.graphics.Color.TRANSPARENT.let { androidx.compose.ui.graphics.Color.Transparent },
+                if (isSelected) GameColors.Blue.copy(alpha = 0.3f) else androidx.compose.ui.graphics.Color.Transparent,
                 RoundedCornerShape(GameDimens.radiusSm)
             )
             .clickable { onClick() }
@@ -152,7 +150,7 @@ private fun ProfileOverview(username: String, level: Int, rank: String, stats: M
             }
         }
 
-        // Rank section
+        // Rank section (#19 in reference)
         GamePanel(modifier = Modifier.width(180.dp), borderColor = GameColors.Gold.copy(alpha = 0.5f)) {
             Column(
                 modifier = Modifier.padding(GameDimens.paddingLg),
@@ -190,6 +188,7 @@ private fun QuickStat(label: String, value: String, modifier: Modifier = Modifie
     }
 }
 
+// Stats view (#20 in reference)
 @Composable
 private fun StatsView(stats: Map<String, String>) {
     val displayStats = stats.ifEmpty {
@@ -198,7 +197,7 @@ private fun StatsView(stats: Map<String, String>) {
             "Matches Won" to "160",
             "Win Rate" to "64%",
             "Best Score" to "450",
-            "UNO Declared" to "98",
+            "NUNO Declared" to "98",
             "Win Streak" to "12"
         )
     }
@@ -220,13 +219,14 @@ private fun StatsView(stats: Map<String, String>) {
     }
 }
 
+// Achievements view (#21 in reference)
 @Composable
 private fun AchievementsView() {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("ACHIEVEMENTS", color = GameColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
 
         AchievementItem("First Win", "Win your first match", 1f, true)
-        AchievementItem("UNO Master", "Declare UNO 50 times", 0.7f, false, "35/50")
+        AchievementItem("NUNO Master", "Declare NUNO 50 times", 0.7f, false, "35/50")
         AchievementItem("Winner", "Win 100 matches", 0.6f, false, "60/100")
     }
 }

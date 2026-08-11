@@ -18,8 +18,8 @@ import javax.inject.Inject
 
 data class VoiceUiState(
     val isConnected: Boolean = false,
-    val isMicMuted: Boolean = false,
-    val isSpeakerMuted: Boolean = false,
+    val isMicMuted: Boolean = true,
+    val isSpeakerMuted: Boolean = true,
     val mutedPlayers: Set<String> = emptySet(),
     val connectedPeers: Set<String> = emptySet()
 )
@@ -55,15 +55,21 @@ class VoiceViewModel @Inject constructor(
             return
         }
 
-        Log.d(TAG, "Joining voice room: $roomId")
+        Log.d(TAG, "Joining voice room (default mic/speaker OFF): $roomId")
 
-        // Initialize WebRTC when joining
+        // Initialize WebRTC when joining and start with mic & speaker MUTED by default
         webRTCManager.initialize()
+        webRTCManager.setMuted(true)
+        webRTCManager.setSpeakerMuted(true)
 
         val data = JSONObject().apply { put("roomId", roomId) }
         socketManager.emit(Constants.EVENT_VOICE_JOIN, data)
         hasJoinedRoom = true
-        _uiState.value = _uiState.value.copy(isConnected = true)
+        _uiState.value = _uiState.value.copy(
+            isConnected = true,
+            isMicMuted = true,
+            isSpeakerMuted = true
+        )
     }
 
     fun leaveVoiceRoom() {
@@ -80,14 +86,14 @@ class VoiceViewModel @Inject constructor(
         val newState = !_uiState.value.isMicMuted
         webRTCManager.setMuted(newState)
         _uiState.value = _uiState.value.copy(isMicMuted = newState)
-        Log.d(TAG, "Mic muted: $newState")
+        Log.d(TAG, "Mic muted toggled: $newState")
     }
 
     fun toggleSpeaker() {
         val newState = !_uiState.value.isSpeakerMuted
         webRTCManager.setSpeakerMuted(newState)
         _uiState.value = _uiState.value.copy(isSpeakerMuted = newState)
-        Log.d(TAG, "Speaker muted: $newState")
+        Log.d(TAG, "Speaker muted toggled: $newState")
     }
 
     fun togglePlayerMute(playerId: String) {
@@ -128,7 +134,7 @@ class VoiceViewModel @Inject constructor(
             val userId = p.optString("userId")
             if (userId.isNotEmpty()) {
                 viewModelScope.launch {
-                    delay(500L * (i + 1)) // Stagger connections
+                    delay(200L * (i + 1))
                     initiateConnection(userId)
                 }
             }
@@ -139,12 +145,7 @@ class VoiceViewModel @Inject constructor(
         if (data == null) return
         val userId = data.optString("userId")
         if (userId.isEmpty()) return
-        Log.d(TAG, "User joined voice: $userId")
-
-        viewModelScope.launch {
-            delay(1000) // Wait for them to be ready
-            initiateConnection(userId)
-        }
+        Log.d(TAG, "User joined voice room: $userId")
     }
 
     private fun handleUserLeft(data: JSONObject?) {
@@ -162,7 +163,7 @@ class VoiceViewModel @Inject constructor(
     private fun initiateConnection(targetUserId: String) {
         Log.d(TAG, "Initiating voice connection to $targetUserId")
 
-        val pc = webRTCManager.createPeerConnection(targetUserId) ?: return
+        val pc = webRTCManager.getOrCreatePeerConnection(targetUserId) ?: return
 
         webRTCManager.createOffer(targetUserId) { offer ->
             val data = JSONObject().apply {
@@ -182,7 +183,7 @@ class VoiceViewModel @Inject constructor(
 
         Log.d(TAG, "Received offer from $fromUserId")
 
-        webRTCManager.createPeerConnection(fromUserId)
+        webRTCManager.getOrCreatePeerConnection(fromUserId)
         webRTCManager.setRemoteDescription(fromUserId, SessionDescription(SessionDescription.Type.OFFER, sdp))
 
         webRTCManager.createAnswer(fromUserId) { answer ->

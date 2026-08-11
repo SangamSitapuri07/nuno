@@ -28,6 +28,7 @@ data class FriendData(
     val userId: String,
     val username: String,
     val status: String,
+    val roomCode: String? = null,
     val rating: Int = 0,
     val isOnline: Boolean = false
 )
@@ -53,12 +54,14 @@ fun FriendsScreen(
     onJoin: (String) -> Unit,
     onAcceptRequest: (String) -> Unit,
     onRejectRequest: (String) -> Unit,
+    onRemoveFriend: (String) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onSendFriendRequest: (String) -> Unit = {},
     onNavigate: (String) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
+    var activeDmFriend by remember { mutableStateOf<FriendData?>(null) }
 
     Box(
         modifier = Modifier
@@ -142,8 +145,9 @@ fun FriendsScreen(
                                 FriendCard(
                                     friend = friend,
                                     onInvite = { onInvite(friend.userId) },
-                                    onJoin = { onJoin(friend.userId) },
-                                    onChat = { }
+                                    onJoin = { onJoin(friend.roomCode ?: "") },
+                                    onChat = { activeDmFriend = friend },
+                                    onRemove = { onRemoveFriend(friend.userId) }
                                 )
                             }
                         }
@@ -174,7 +178,6 @@ fun FriendsScreen(
                 }
 
                 3 -> {
-                    // ADD FRIENDS - Search by username
                     AddFriendsTab(
                         searchResults = searchResults,
                         onSearch = onSearch,
@@ -189,6 +192,13 @@ fun FriendsScreen(
             onNavigate = onNavigate,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+
+        activeDmFriend?.let { friend ->
+            DirectMessageDialog(
+                friend = friend,
+                onDismiss = { activeDmFriend = null }
+            )
+        }
     }
 }
 
@@ -307,7 +317,13 @@ private fun FriendTab(label: String, isSelected: Boolean, badge: Int = 0, onClic
 }
 
 @Composable
-private fun FriendCard(friend: FriendData, onInvite: () -> Unit, onJoin: () -> Unit, onChat: () -> Unit) {
+private fun FriendCard(
+    friend: FriendData,
+    onInvite: () -> Unit,
+    onJoin: () -> Unit,
+    onChat: () -> Unit,
+    onRemove: () -> Unit
+) {
     val statusColor = when (friend.status) {
         "Online" -> GameColors.Online
         "In Game" -> GameColors.InGame
@@ -315,26 +331,40 @@ private fun FriendCard(friend: FriendData, onInvite: () -> Unit, onJoin: () -> U
         else -> GameColors.Offline
     }
 
-    GamePanel(borderColor = statusColor.copy(alpha = 0.3f)) {
+    GamePanel(
+        borderColor = statusColor.copy(alpha = 0.3f),
+        modifier = Modifier.clickable { onChat() }
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(GameDimens.paddingMd),
             verticalAlignment = Alignment.CenterVertically
         ) {
             GameAvatar(username = friend.username, size = 40.dp, borderColor = statusColor, isOnline = friend.isOnline)
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onChat() }
+            ) {
                 Text(friend.username, color = GameColors.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(friend.status, color = statusColor, fontSize = 11.sp)
             }
-            Text("🏆 ${friend.rating}", color = GameColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.width(12.dp))
-            when (friend.status) {
-                "In Lobby" -> GameButton("JOIN", onClick = onJoin, style = ButtonStyle.GREEN, height = 32.dp)
-                "Online" -> GameButton("INVITE", onClick = onInvite, style = ButtonStyle.PRIMARY, height = 32.dp)
-                else -> {
-                    IconButton(onClick = onChat, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.Chat, null, tint = GameColors.Blue)
-                    }
+            Text("🏆 ${friend.rating}", color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(6.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(onClick = onChat, modifier = Modifier.size(30.dp)) {
+                    Icon(Icons.AutoMirrored.Filled.Chat, null, tint = GameColors.Cyan, modifier = Modifier.size(18.dp))
+                }
+                when (friend.status) {
+                    "In Lobby" -> GameButton("JOIN", onClick = onJoin, style = ButtonStyle.GREEN, height = 30.dp)
+                    "Online" -> GameButton("INVITE", onClick = onInvite, style = ButtonStyle.PRIMARY, height = 30.dp)
+                    else -> {}
+                }
+                IconButton(onClick = onRemove, modifier = Modifier.size(30.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = GameColors.Red.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -360,6 +390,105 @@ private fun RequestCard(request: FriendRequestData, onAccept: () -> Unit, onReje
             }
         }
     }
+}
+
+@Composable
+fun DirectMessageDialog(
+    friend: FriendData,
+    onDismiss: () -> Unit
+) {
+    val activity = androidx.compose.ui.platform.LocalContext.current as? androidx.activity.ComponentActivity
+    val friendsVm = activity?.let { androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.friends.FriendsViewModel>(it) }
+    val dmsMap by friendsVm?.dmsState?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
+    val friendMessages = dmsMap[friend.userId] ?: emptyList()
+
+    var textInput by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                GameAvatar(username = friend.username, size = 36.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(friend.username, color = GameColors.TextWhite, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(friend.status, color = GameColors.Cyan, fontSize = 11.sp)
+                }
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().height(260.dp)) {
+                LazyColumn(
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (friendMessages.isEmpty()) {
+                        item {
+                            Text(
+                                "Start a conversation with ${friend.username}!",
+                                color = GameColors.TextGray,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 24.dp)
+                            )
+                        }
+                    } else {
+                        items(friendMessages.size) { i ->
+                            val msg = friendMessages[i]
+                            val isMe = msg.isMe
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = if (isMe) Alignment.CenterEnd else Alignment.CenterStart
+                            ) {
+                                Column(horizontalAlignment = if (isMe) Alignment.End else Alignment.Start) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                if (isMe) GameColors.Blue else GameColors.Surface,
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(msg.message, color = Color.White, fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    GameTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it },
+                        placeholder = "Type message...",
+                        modifier = Modifier.weight(1f),
+                        height = 40.dp
+                    )
+                    GameButton(
+                        text = "SEND",
+                        onClick = {
+                            if (textInput.isNotBlank()) {
+                                friendsVm?.sendDm(friend.userId, textInput)
+                                textInput = ""
+                            }
+                        },
+                        style = ButtonStyle.GREEN,
+                        height = 40.dp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close", color = GameColors.TextWhite) }
+        }
+    )
 }
 
 @Composable

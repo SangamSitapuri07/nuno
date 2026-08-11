@@ -139,11 +139,11 @@ private fun ColorOption(
 }
 
 // ─────────────────────────────────────────
-// UNO DECLARED POPUP
+// NUNO DECLARED POPUP (#10)
 // ─────────────────────────────────────────
 
 @Composable
-fun UnoDeclaRedPopup(
+fun NunoDeclaredPopup(
     username: String,
     onDismiss: () -> Unit
 ) {
@@ -157,10 +157,10 @@ fun UnoDeclaRedPopup(
                 modifier = Modifier.padding(GameDimens.paddingXl),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "UNO!", fontSize = 48.sp, fontWeight = FontWeight.Black, color = GameColors.Gold)
+                Text(text = "NUNO!", fontSize = 48.sp, fontWeight = FontWeight.Black, color = GameColors.Gold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "You have declared UNO",
+                    text = "You have declared NUNO",
                     color = GameColors.TextGray,
                     fontSize = 13.sp
                 )
@@ -177,7 +177,7 @@ fun UnoDeclaRedPopup(
 }
 
 // ─────────────────────────────────────────
-// DRAW PENALTY POPUP
+// DRAW PENALTY POPUP (#11)
 // ─────────────────────────────────────────
 
 @Composable
@@ -197,21 +197,47 @@ fun DrawPenaltyPopup(
             ) {
                 Text(
                     text = "DRAW $cardCount CARDS",
-                    color = GameColors.Red,
+                    color = GameColors.Gold,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Black
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 4 Cards graphic fan (#11 in reference)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy((-12).dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val colors = listOf(GameColors.CardRed, GameColors.CardBlue, GameColors.CardGreen, GameColors.CardYellow)
+                    colors.forEach { col ->
+                        Box(
+                            modifier = Modifier
+                                .size(width = 44.dp, height = 64.dp)
+                                .shadow(6.dp, RoundedCornerShape(6.dp))
+                                .background(col, RoundedCornerShape(6.dp))
+                                .border(1.5.dp, Color.White, RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("+4", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
                     text = "You have to draw $cardCount cards",
                     color = GameColors.TextGray,
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
+
                 Spacer(modifier = Modifier.height(20.dp))
+
                 GameButton(
                     text = "OK",
                     onClick = onDismiss,
-                    style = ButtonStyle.DANGER,
+                    style = ButtonStyle.GOLD,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

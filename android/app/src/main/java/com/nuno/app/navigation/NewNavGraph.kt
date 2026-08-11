@@ -57,10 +57,18 @@ fun GameNavGraph(
 
     LaunchedEffect(lobbyState.room) {
         val room = lobbyState.room
-        val friendId = pendingInviteFriendId
-        if (room != null && friendId != null) {
-            inviteVm.sendInvite(friendId, room.roomCode)
-            pendingInviteFriendId = null
+        if (room != null) {
+            val friendId = pendingInviteFriendId
+            if (friendId != null) {
+                inviteVm.sendInvite(friendId, room.roomCode)
+                pendingInviteFriendId = null
+            }
+            val currentRoute = navController.currentDestination?.route
+            if (currentRoute != GameScreen.RoomLobby.route && currentRoute?.startsWith(GameScreen.Gameplay.route) != true) {
+                navController.navigate(GameScreen.RoomLobby.route) {
+                    popUpTo(GameScreen.Home.route)
+                }
+            }
         }
     }
 
@@ -145,7 +153,17 @@ fun GameNavGraph(
             val coins = (profileState as? UiState.Success)?.data?.coins ?: 0
             val rank = (profileState as? UiState.Success)?.data?.leaderboard?.tier ?: "BRONZE"
 
-            val onlineFriends = (friendsState as? UiState.Success)?.data?.map { f ->
+            val rawFriends = (friendsState as? UiState.Success)?.data ?: emptyList()
+            val onlineFriends = rawFriends.sortedWith(
+                compareBy<com.nuno.app.features.friends.Friend> { f ->
+                    when (f.status) {
+                        "IN_LOBBY" -> 1
+                        "ONLINE" -> 2
+                        "IN_MATCH" -> 3
+                        else -> 4
+                    }
+                }.thenBy { it.username.lowercase() }
+            ).map { f ->
                 OnlineFriendData(
                     userId = f.userId,
                     username = f.username,
@@ -157,7 +175,7 @@ fun GameNavGraph(
                     },
                     isOnline = f.status != "OFFLINE"
                 )
-            } ?: emptyList()
+            }
 
             HomeScreen(
                 username = username,
@@ -201,8 +219,8 @@ fun GameNavGraph(
         }
 
         // ═══════════════════════════════════════
-// CREATE ROOM
-// ═══════════════════════════════════════
+        // CREATE ROOM
+        // ═══════════════════════════════════════
 
         composable(GameScreen.CreateRoom.route) {
             val activity = androidx.compose.ui.platform.LocalContext.current as androidx.activity.ComponentActivity
@@ -259,6 +277,13 @@ fun GameNavGraph(
             val friendsVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.friends.FriendsViewModel>(activity)
             val friendsState by friendsVm.friendsState.collectAsState()
             val inviteVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.core.social.InviteViewModel>(activity)
+            val voiceVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.voice.VoiceViewModel>(activity)
+
+            LaunchedEffect(lobbyState.room?.roomId) {
+                lobbyState.room?.roomId?.let { id ->
+                    try { voiceVm.joinVoiceRoom(id) } catch (e: Exception) {}
+                }
+            }
 
             LaunchedEffect(lobbyState.gameStarted) {
                 if (lobbyState.gameStarted && lobbyState.matchId != null) {
@@ -310,8 +335,8 @@ fun GameNavGraph(
         }
 
         // ═══════════════════════════════════════
-// MATCHMAKING
-// ═══════════════════════════════════════
+        // MATCHMAKING
+        // ═══════════════════════════════════════
 
         composable(GameScreen.Matchmaking.route) {
             val matchVm = androidx.hilt.navigation.compose.hiltViewModel<com.nuno.app.features.matchmaking.MatchmakingViewModel>()
@@ -405,7 +430,17 @@ fun GameNavGraph(
                 }
             }
 
-            val friends = (friendsState as? UiState.Success)?.data?.map { f ->
+            val rawFriendsList = (friendsState as? UiState.Success)?.data ?: emptyList()
+            val friends = rawFriendsList.sortedWith(
+                compareBy<com.nuno.app.features.friends.Friend> { f ->
+                    when (f.status) {
+                        "IN_LOBBY" -> 1
+                        "ONLINE" -> 2
+                        "IN_MATCH" -> 3
+                        else -> 4
+                    }
+                }.thenBy { it.username.lowercase() }
+            ).map { f ->
                 FriendData(
                     userId = f.userId,
                     username = f.username,
@@ -415,10 +450,11 @@ fun GameNavGraph(
                         "IN_LOBBY" -> "In Lobby"
                         else -> "Offline"
                     },
+                    roomCode = f.roomCode,
                     rating = 0,
                     isOnline = f.status != "OFFLINE"
                 )
-            } ?: emptyList()
+            }
 
             val requests = (requestsState as? UiState.Success)?.data?.map { r ->
                 FriendRequestData(
@@ -440,7 +476,7 @@ fun GameNavGraph(
                 requests = requests,
                 searchResults = searchResults,
                 onBack = { navController.popBackStack() },
-                onInvite = { friendId ->
+                onInvite = { friendId: String ->
                     val roomCode = lobbyState.room?.roomCode
                     if (!roomCode.isNullOrEmpty()) {
                         inviteVm.sendInvite(friendId, roomCode)
@@ -449,20 +485,20 @@ fun GameNavGraph(
                         lobbyVm.createRoomWithPlayerCount(4)
                     }
                 },
-                onJoin = { friendId ->
-                    val roomCode = lobbyState.room?.roomCode
-                    if (!roomCode.isNullOrEmpty()) {
-                        lobbyVm.joinRoomByCode(roomCode)
+                onJoin = { code: String ->
+                    if (code.isNotEmpty()) {
+                        lobbyVm.joinRoomByCode(code)
                         navController.navigate(GameScreen.RoomLobby.route) {
                             popUpTo(GameScreen.Home.route)
                         }
                     }
                 },
-                onAcceptRequest = { friendsVm.acceptRequest(it) },
-                onRejectRequest = { friendsVm.rejectRequest(it) },
-                onSearch = { friendsVm.searchPlayers(it) },
-                onSendFriendRequest = { friendsVm.sendRequest(it) },
-                onNavigate = { route -> handleNavigation(navController, route) }
+                onAcceptRequest = { requestId: String -> friendsVm.acceptRequest(requestId) },
+                onRejectRequest = { requestId: String -> friendsVm.rejectRequest(requestId) },
+                onRemoveFriend = { friendId: String -> friendsVm.removeFriend(friendId) },
+                onSearch = { query: String -> friendsVm.searchPlayers(query) },
+                onSendFriendRequest = { playerId: String -> friendsVm.sendRequest(playerId) },
+                onNavigate = { route: String -> handleNavigation(navController, route) }
             )
         }
 

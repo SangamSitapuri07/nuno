@@ -62,13 +62,21 @@ fun GameOverScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Score list
-                scores.forEach { player ->
+                // Score list with medals (#12 in reference)
+                scores.forEachIndexed { index, player ->
+                    val rankNum = index + 1
+                    val rankBadge = when (rankNum) {
+                        1 -> "🥇"
+                        2 -> "🥈"
+                        3 -> "🥉"
+                        else -> "$rankNum."
+                    }
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                if (player.isWinner) GameColors.Gold.copy(alpha = 0.1f) else Color.Transparent,
+                                if (player.isWinner) GameColors.Gold.copy(alpha = 0.15f) else Color.Transparent,
                                 RoundedCornerShape(GameDimens.radiusSm)
                             )
                             .padding(horizontal = GameDimens.paddingMd, vertical = GameDimens.paddingSm),
@@ -76,6 +84,8 @@ fun GameOverScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(rankBadge, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = GameColors.Gold)
+                            Spacer(modifier = Modifier.width(8.dp))
                             GameAvatar(
                                 username = player.username,
                                 size = 28.dp,
@@ -91,9 +101,9 @@ fun GameOverScreen(
                         }
                         Text(
                             text = player.score.toString(),
-                            color = GameColors.TextWhite,
+                            color = GameColors.Gold,
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Black
                         )
                     }
                 }
@@ -108,13 +118,13 @@ fun GameOverScreen(
                     GameButton(
                         text = "PLAY AGAIN",
                         onClick = onPlayAgain,
-                        style = ButtonStyle.PRIMARY,
+                        style = ButtonStyle.GOLD,
                         modifier = Modifier.weight(1f)
                     )
                     GameButton(
                         text = "LOBBY",
                         onClick = onLobby,
-                        style = ButtonStyle.SECONDARY,
+                        style = ButtonStyle.PRIMARY,
                         modifier = Modifier.weight(1f)
                     )
                 }

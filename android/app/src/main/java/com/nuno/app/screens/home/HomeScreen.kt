@@ -11,24 +11,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.nuno.app.R
 import com.nuno.app.core.designsystem.GameColors
-import com.nuno.app.core.designsystem.GameDimens
 import com.nuno.app.core.designsystem.components.GameAvatar
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.random.Random
+import com.nuno.app.screens.social.DirectMessageDialog
+import com.nuno.app.screens.social.FriendData
 
 data class OnlineFriendData(
     val userId: String,
@@ -51,158 +47,233 @@ fun HomeScreen(
     onInviteFriend: (String) -> Unit = {},
     onNavigate: (String) -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background — PremiumGalaxyBackground (from GalaxyBackground.kt)
-        PremiumGalaxyBackground()
-        SpaceParticles()
+    var selectedFriendForAction by remember { mutableStateOf<OnlineFriendData?>(null) }
+    var activeDmFriendData by remember { mutableStateOf<FriendData?>(null) }
 
-        // Content
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background — Animated Space Galaxy Image Asset (R.drawable.bg_galaxy_spiral)
+        PremiumGalaxyBackground()
+
+        // ═══════════════════════════════════════
+        // TOP ROW: Left = Profile & Currencies | Right = Friends Panel
+        // ═══════════════════════════════════════
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            // TOP LEFT HEADER (Profile Pill + Gold + Gems + Settings - Notification Removed)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TopLeftProfilePill(username = username, level = level, rank = rank)
+                MetallicCurrencyPill("🪙", formatNum(coins), GameColors.Gold)
+                MetallicCurrencyPill("💎", formatNum(gems), GameColors.Cyan)
+                MetallicSettingsButton { onNavigate("settings") }
+            }
+
+            // TOP RIGHT: Friends Panel (Stretched towards bottom)
+            FrostedFriendsPanel(
+                onlineCount = onlineFriends.count { it.isOnline },
+                friends = onlineFriends,
+                onFriendClick = { friend -> selectedFriendForAction = friend },
+                onInvite = onInviteFriend,
+                onAddFriendClick = { onNavigate("friends") },
+                modifier = Modifier
+                    .width(235.dp)
+                    .height(160.dp)
+            )
+        }
+
+        // ═══════════════════════════════════════
+        // CENTER ROW: Left = Pedestal Cards Asset | Center = Chest Asset | Right = PLAY Button Asset
+        // ═══════════════════════════════════════
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp)
+                .padding(top = 50.dp, bottom = 52.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT - Spinning Wheel
+            // LEFT-CENTER AREA: 5-Card NUNO Fan Pedestal Image Asset (Shifted slightly left)
             Box(
-                modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                modifier = Modifier
+                    .weight(0.50f)
+                    .fillMaxHeight()
+                    .offset(x = (-12).dp),
                 contentAlignment = Alignment.Center
             ) {
                 SpinningCardWheel()
             }
 
-            // CENTER - Profile + Play + Gift
-            Column(
-                modifier = Modifier.weight(0.3f).fillMaxHeight().padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            // MIDDLE-CENTER AREA: Daily Gift Treasure Chest Image Asset (Animated floating bounce)
+            Box(
+                modifier = Modifier
+                    .weight(0.22f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
             ) {
-                Spacer(modifier = Modifier.weight(0.15f))
-
-                PremiumAvatar(username = username)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(username, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text("Lv. $level", color = Color(0xFF8899BB), fontSize = 11.sp)
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                PremiumPlayButton(onClick = onPlay)
-
-                Spacer(modifier = Modifier.height(10.dp))
-
                 TreasureChest(onClick = onDailyReward)
-
-                Spacer(modifier = Modifier.weight(0.1f))
             }
 
-            // RIGHT - Stats + Friends
-            Column(
+            // RIGHT-CENTER AREA: PLAY Button Image Asset (Positioned at Bottom Right with floating bounce)
+            Box(
                 modifier = Modifier
-                    .weight(0.3f)
+                    .weight(0.28f)
                     .fillMaxHeight()
-                    .padding(top = 8.dp, bottom = 8.dp, start = 4.dp, end = 8.dp)
+                    .padding(end = 12.dp, bottom = 8.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                // Currency pills row — coins, gems, notifications only (matches reference: no settings icon here)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    MetallicCurrencyPill("🪙", formatNum(coins), GameColors.Gold)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    MetallicCurrencyPill("💎", formatNum(gems), GameColors.Cyan)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    MetallicNotificationPill(badge = 1) { onNotifications() }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Rank + Season side by side (FIXED HEIGHT)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    MetallicRankCard(rank = rank, modifier = Modifier.weight(1f).fillMaxHeight())
-                    MetallicSeasonCard(season = "S1", modifier = Modifier.weight(1f).fillMaxHeight())
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Friends panel (takes remaining space)
-                FrostedFriendsPanel(
-                    onlineCount = onlineFriends.count { it.isOnline },
-                    friends = onlineFriends,
-                    onInvite = onInviteFriend,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                )
+                PremiumPlayButton(onClick = onPlay)
             }
         }
 
-        // Nav Bar
+        // ═══════════════════════════════════════
+        // BOTTOM BAR (Left Half Only - 0.48f width)
+        // ═══════════════════════════════════════
         PremiumNavBar(
             selectedRoute = "home",
             onNavigate = onNavigate,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .fillMaxWidth(0.48f)
+                .align(Alignment.BottomStart)
         )
-    }
-}
 
-// ═══════════════════════════════════════
-// SPACE PARTICLES (ambient dust overlay, kept on top of PremiumGalaxyBackground)
-// ═══════════════════════════════════════
+        // FRIEND ACTION DIALOG (Ask if user wants to DM or Invite)
+        selectedFriendForAction?.let { friend ->
+            FriendActionDialog(
+                friend = friend,
+                onSendDm = {
+                    activeDmFriendData = FriendData(
+                        userId = friend.userId,
+                        username = friend.username,
+                        status = friend.status,
+                        isOnline = friend.isOnline
+                    )
+                    selectedFriendForAction = null
+                },
+                onInvite = {
+                    onInviteFriend(friend.userId)
+                    selectedFriendForAction = null
+                },
+                onDismiss = { selectedFriendForAction = null }
+            )
+        }
 
-@Composable
-private fun SpaceParticles() {
-    val infiniteTransition = rememberInfiniteTransition(label = "dust")
-    val progress by infiniteTransition.animateFloat(
-        0f, 1f, infiniteRepeatable(tween(20_000, easing = LinearEasing)), label = "p"
-    )
-
-    val particles = remember {
-        List(20) {
-            DustParticle(
-                x = Random.nextFloat(), y = Random.nextFloat(),
-                speed = Random.nextFloat() * 0.1f + 0.03f,
-                size = Random.nextFloat() * 1.5f + 0.5f,
-                color = listOf(Color(0xFFFFD700), Color(0xFF4CC9F0), Color(0xFFB980F5)).random()
+        // DIRECT MESSAGE DIALOG ON HOME SCREEN
+        activeDmFriendData?.let { friendData ->
+            DirectMessageDialog(
+                friend = friendData,
+                onDismiss = { activeDmFriendData = null }
             )
         }
     }
+}
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        particles.forEach { p ->
-            val y = ((p.y + progress * p.speed) % 1f) * size.height
-            val x = p.x * size.width
-            val alpha = when {
-                (y / size.height) < 0.1f -> (y / size.height) * 10f
-                (y / size.height) > 0.9f -> (1f - y / size.height) * 10f
-                else -> 0.4f
+// ═══════════════════════════════════════
+// FRIEND ACTION MODAL DIALOG
+// ═══════════════════════════════════════
+
+@Composable
+private fun FriendActionDialog(
+    friend: OnlineFriendData,
+    onSendDm: () -> Unit,
+    onInvite: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .width(300.dp)
+                .shadow(16.dp, RoundedCornerShape(18.dp), spotColor = Color(0xFF4CC9F0))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF1E2548), Color(0xFF121630))
+                    ),
+                    RoundedCornerShape(18.dp)
+                )
+                .border(1.5.dp, Color(0xFF4CC9F0).copy(alpha = 0.5f), RoundedCornerShape(18.dp))
+                .padding(18.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                GameAvatar(username = friend.username, size = 44.dp, borderColor = Color(0xFF4CC9F0))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(friend.username, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Status: ${friend.status}", color = Color(0xFF4CC9F0), fontSize = 11.sp)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Choose an action:", color = Color(0xFFA0B0D0), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Action 1: Send Direct Message
+                Button(
+                    onClick = onSendDm,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4361EE)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(40.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Chat, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Send Direct Message", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Action 2: Invite to Room
+                if (friend.isOnline && friend.status != "In Game") {
+                    Button(
+                        onClick = onInvite,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(40.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Gamepad, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Invite to Game", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Cancel Button
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth().height(38.dp)
+                ) {
+                    Text("Cancel", color = Color.White, fontSize = 12.sp)
+                }
             }
-            drawCircle(p.color.copy(alpha = alpha), p.size, Offset(x, y))
         }
     }
 }
 
-private data class DustParticle(val x: Float, val y: Float, val speed: Float, val size: Float, val color: Color)
-
 // ═══════════════════════════════════════
-// TREASURE CHEST
+// TREASURE CHEST (3D Asset loaded from drawable with animated bounce)
 // ═══════════════════════════════════════
 
 @Composable
 private fun TreasureChest(onClick: () -> Unit) {
-    val infiniteTransition = rememberInfiniteTransition(label = "chest")
-    val bounce by infiniteTransition.animateFloat(
-        0f, -5f,
-        infiniteRepeatable(tween(1500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "bounce"
+    val infiniteTransition = rememberInfiniteTransition(label = "chestImageAnim")
+
+    val scalePulse by infiniteTransition.animateFloat(
+        1f, 1.04f,
+        infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "scale"
     )
-    val glow by infiniteTransition.animateFloat(
-        0.4f, 0.9f,
-        infiniteRepeatable(tween(1200), RepeatMode.Reverse),
-        label = "glow"
+
+    val floatBounce by infiniteTransition.animateFloat(
+        0f, -4f,
+        infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "bounce"
     )
 
     Column(
@@ -211,19 +282,17 @@ private fun TreasureChest(onClick: () -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .size(58.dp)
-                .offset(y = bounce.dp)
-                .shadow(12.dp, RoundedCornerShape(8.dp), spotColor = GameColors.Gold.copy(alpha = glow)),
+                .scale(scalePulse)
+                .offset(y = floatBounce.dp)
+                .size(width = 130.dp, height = 110.dp),
             contentAlignment = Alignment.Center
         ) {
-            // NOTE: using 🎁 emoji as a stand-in — the reference screenshot shows an
-            // ornate locked chest with a gem, which no emoji matches exactly. A pixel-close
-            // version would need to be hand-drawn with Canvas the same way SpinningCardWheel
-            // and PremiumPlayButton are. Flagging this rather than pretending it's identical.
-            Text("🎁", fontSize = 36.sp)
+            Image(
+                painter = painterResource(id = R.drawable.ic_treasure_chest_3d),
+                contentDescription = "Treasure Chest",
+                modifier = Modifier.fillMaxSize()
+            )
         }
-        Spacer(modifier = Modifier.height(2.dp))
-        Text("Daily Gift", color = Color(0xFF8899BB), fontSize = 10.sp, fontWeight = FontWeight.Medium)
     }
 }
 
