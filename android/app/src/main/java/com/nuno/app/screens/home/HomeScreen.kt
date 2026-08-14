@@ -1,7 +1,9 @@
 package com.nuno.app.screens.home
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,10 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,7 @@ import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.components.GameAvatar
 import com.nuno.app.screens.social.DirectMessageDialog
 import com.nuno.app.screens.social.FriendData
+import java.util.Locale
 
 data class OnlineFriendData(
     val userId: String,
@@ -49,109 +53,177 @@ fun HomeScreen(
 ) {
     var selectedFriendForAction by remember { mutableStateOf<OnlineFriendData?>(null) }
     var activeDmFriendData by remember { mutableStateOf<FriendData?>(null) }
+    val config = LocalConfiguration.current
+    val isWide = config.screenWidthDp > config.screenHeightDp
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background — Animated Space Galaxy Image Asset (R.drawable.bg_galaxy_spiral)
-        PremiumGalaxyBackground()
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0A0D1E))) {
+        // Background galaxy subtle
+        Image(
+            painter = painterResource(id = R.drawable.bg_galaxy_spiral),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.35f
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(Color(0xFF0E1230).copy(0.6f), Color(0xFF070818).copy(0.9f))))
+        )
 
-        // ═══════════════════════════════════════
-        // TOP ROW: Left = Profile & Currencies | Right = Friends Panel
-        // ═══════════════════════════════════════
+        // Top bar - reference: avatar Sangam, coins 12,450, gems 230
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            // TOP LEFT HEADER (Profile Pill + Gold + Gems + Settings - Notification Removed)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                TopLeftProfilePill(username = username, level = level, rank = rank)
-                MetallicCurrencyPill("🪙", formatNum(coins), GameColors.Gold)
-                MetallicCurrencyPill("💎", formatNum(gems), GameColors.Cyan)
-                MetallicSettingsButton { onNavigate("settings") }
-            }
-
-            // TOP RIGHT: Friends Panel (Stretched towards bottom)
-            FrostedFriendsPanel(
-                onlineCount = onlineFriends.count { it.isOnline },
-                friends = onlineFriends,
-                onFriendClick = { friend -> selectedFriendForAction = friend },
-                onInvite = onInviteFriend,
-                onAddFriendClick = { onNavigate("friends") },
-                modifier = Modifier
-                    .width(235.dp)
-                    .height(160.dp)
-            )
-        }
-
-        // ═══════════════════════════════════════
-        // CENTER ROW: Left = Pedestal Cards Asset | Center = Chest Asset | Right = PLAY Button Asset
-        // ═══════════════════════════════════════
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 50.dp, bottom = 52.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // LEFT-CENTER AREA: 5-Card NUNO Fan Pedestal Image Asset (Shifted slightly left)
-            Box(
-                modifier = Modifier
-                    .weight(0.50f)
-                    .fillMaxHeight()
-                    .offset(x = (-12).dp),
-                contentAlignment = Alignment.Center
-            ) {
-                SpinningCardWheel()
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GameAvatar(username = username.ifEmpty { "Sangam" }, size = 40.dp, borderColor = GameColors.Gold)
+                Column {
+                    Text(username.ifEmpty { "Sangam" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("Lv. $level", color = GameColors.Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                // Coins pill like reference
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
+                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🪙", fontSize = 12.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(formatNum(coins.ifZero(12450)), color = GameColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
+                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("💎", fontSize = 12.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(formatNum(gems.ifZero(230)), color = GameColors.Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
 
-            // MIDDLE-CENTER AREA: Daily Gift Treasure Chest Image Asset (Animated floating bounce)
-            Box(
-                modifier = Modifier
-                    .weight(0.22f)
-                    .fillMaxHeight(),
-                contentAlignment = Alignment.Center
-            ) {
-                TreasureChest(onClick = onDailyReward)
-            }
-
-            // RIGHT-CENTER AREA: PLAY Button Image Asset (Positioned at Bottom Right with floating bounce)
-            Box(
-                modifier = Modifier
-                    .weight(0.28f)
-                    .fillMaxHeight()
-                    .padding(end = 12.dp, bottom = 8.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                PremiumPlayButton(onClick = onPlay)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color(0xFF1B1F3D), CircleShape)
+                        .border(1.dp, Color(0xFF2C3159), CircleShape)
+                        .clickable { onNotifications() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
+                }
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color(0xFF1B1F3D), CircleShape)
+                        .border(1.dp, Color(0xFF2C3159), CircleShape)
+                        .clickable { onNavigate("settings") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Settings, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
+                }
             }
         }
 
-        // ═══════════════════════════════════════
-        // BOTTOM BAR (Left Half Only - 0.48f width)
-        // ═══════════════════════════════════════
-        PremiumNavBar(
-            selectedRoute = "home",
-            onNavigate = onNavigate,
-            modifier = Modifier
-                .fillMaxWidth(0.48f)
-                .align(Alignment.BottomStart)
-        )
+        // Center - PLAY button red like reference Screen 2 - using generated 3D assets
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // UNO Logo 3D image - generated asset
+                Image(
+                    painter = painterResource(id = R.drawable.ic_uno_logo_3d),
+                    contentDescription = "UNO Logo",
+                    modifier = Modifier
+                        .size(width = 140.dp, height = 80.dp)
+                        .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = Color.Red.copy(0.5f))
+                )
 
-        // FRIEND ACTION DIALOG (Ask if user wants to DM or Invite)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // PLAY button red 3D image - generated asset like reference
+                Image(
+                    painter = painterResource(id = R.drawable.ic_play_red_3d),
+                    contentDescription = "PLAY",
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(80.dp)
+                        .shadow(20.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFE53935).copy(0.6f))
+                        .clickable { onPlay() }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Optional: Show card pedestal asset for premium feel (generated)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_nuno_pedestal_home),
+                    contentDescription = "Card Pedestal",
+                    modifier = Modifier
+                        .size(width = 180.dp, height = 110.dp)
+                        .clickable { onPlay() },
+                    alpha = 0.9f
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Daily reward with generated chest image
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFF1B1F3D).copy(0.8f), RoundedCornerShape(12.dp))
+                        .border(1.dp, GameColors.Gold.copy(0.3f), RoundedCornerShape(12.dp))
+                        .clickable { onDailyReward() }
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_daily_reward_chest_gold),
+                        contentDescription = "Daily",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Daily Reward", color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // Bottom nav - reference: Home, Friends, Leaderboard, Shop, Profile
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .align(Alignment.BottomCenter)
+                .background(Color(0xFF0F1228))
+                .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(0.dp))
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BottomNavItem(label = "Home", icon = Icons.Default.Home, selected = true) { onNavigate("home") }
+                BottomNavItem(label = "Friends", icon = Icons.Default.Group, selected = false) { onNavigate("friends") }
+                BottomNavItem(label = "Leaderboard", icon = Icons.Default.EmojiEvents, selected = false) { onNavigate("leaderboard") }
+                BottomNavItem(label = "Shop", icon = Icons.Default.ShoppingCart, selected = false) { onNavigate("store") }
+                BottomNavItem(label = "Profile", icon = Icons.Default.Person, selected = false) { onNavigate("profile") }
+            }
+        }
+
         selectedFriendForAction?.let { friend ->
             FriendActionDialog(
                 friend = friend,
                 onSendDm = {
-                    activeDmFriendData = FriendData(
-                        userId = friend.userId,
-                        username = friend.username,
-                        status = friend.status,
-                        isOnline = friend.isOnline
-                    )
+                    activeDmFriendData = FriendData(friend.userId, friend.username, friend.status, isOnline = friend.isOnline)
                     selectedFriendForAction = null
                 },
                 onInvite = {
@@ -162,142 +234,63 @@ fun HomeScreen(
             )
         }
 
-        // DIRECT MESSAGE DIALOG ON HOME SCREEN
-        activeDmFriendData?.let { friendData ->
-            DirectMessageDialog(
-                friend = friendData,
-                onDismiss = { activeDmFriendData = null }
-            )
+        activeDmFriendData?.let { fd ->
+            DirectMessageDialog(friend = fd, onDismiss = { activeDmFriendData = null })
         }
     }
 }
 
-// ═══════════════════════════════════════
-// FRIEND ACTION MODAL DIALOG
-// ═══════════════════════════════════════
+@Composable
+private fun BottomNavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, null, tint = if (selected) GameColors.Gold else Color(0xFF5A607F), modifier = Modifier.size(22.dp))
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(label, color = if (selected) GameColors.Gold else Color(0xFF5A607F), fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+    }
+}
 
 @Composable
-private fun FriendActionDialog(
-    friend: OnlineFriendData,
-    onSendDm: () -> Unit,
-    onInvite: () -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun FriendActionDialog(friend: OnlineFriendData, onSendDm: () -> Unit, onInvite: () -> Unit, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
                 .width(300.dp)
-                .shadow(16.dp, RoundedCornerShape(18.dp), spotColor = Color(0xFF4CC9F0))
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF1E2548), Color(0xFF121630))
-                    ),
-                    RoundedCornerShape(18.dp)
-                )
-                .border(1.5.dp, Color(0xFF4CC9F0).copy(alpha = 0.5f), RoundedCornerShape(18.dp))
-                .padding(18.dp)
+                .background(Color(0xFF1E2248), RoundedCornerShape(16.dp))
+                .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(16.dp))
+                .padding(20.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                GameAvatar(username = friend.username, size = 44.dp, borderColor = Color(0xFF4CC9F0))
-                Spacer(modifier = Modifier.height(8.dp))
+                GameAvatar(username = friend.username, size = 48.dp, borderColor = GameColors.Cyan)
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(friend.username, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("Status: ${friend.status}", color = Color(0xFF4CC9F0), fontSize = 11.sp)
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Choose an action:", color = Color(0xFFA0B0D0), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Action 1: Send Direct Message
                 Button(
                     onClick = onSendDm,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4361EE)),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth().height(40.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Chat, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Send Direct Message", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3F8A))
+                ) { Text("Message", color = Color.White) }
                 Spacer(modifier = Modifier.height(8.dp))
-
-                // Action 2: Invite to Room
-                if (friend.isOnline && friend.status != "In Game") {
-                    Button(
-                        onClick = onInvite,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(40.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Gamepad, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Invite to Game", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                // Cancel Button
-                OutlinedButton(
-                    onClick = onDismiss,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f)),
-                    modifier = Modifier.fillMaxWidth().height(38.dp)
-                ) {
-                    Text("Cancel", color = Color.White, fontSize = 12.sp)
-                }
+                Button(
+                    onClick = onInvite,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GameColors.Green)
+                ) { Text("Invite", color = Color.White) }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cancel", color = Color.White) }
             }
         }
     }
 }
 
-// ═══════════════════════════════════════
-// TREASURE CHEST (3D Asset loaded from drawable with animated bounce)
-// ═══════════════════════════════════════
-
-@Composable
-private fun TreasureChest(onClick: () -> Unit) {
-    val infiniteTransition = rememberInfiniteTransition(label = "chestImageAnim")
-
-    val scalePulse by infiniteTransition.animateFloat(
-        1f, 1.04f,
-        infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "scale"
-    )
-
-    val floatBounce by infiniteTransition.animateFloat(
-        0f, -4f,
-        infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "bounce"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
-    ) {
-        Box(
-            modifier = Modifier
-                .scale(scalePulse)
-                .offset(y = floatBounce.dp)
-                .size(width = 130.dp, height = 110.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_treasure_chest_3d),
-                contentDescription = "Treasure Chest",
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-    }
-}
-
 private fun formatNum(n: Int): String = when {
-    n >= 1_000_000 -> String.format("%.1fM", n / 1_000_000.0)
-    n >= 1_000 -> String.format("%.1fK", n / 1_000.0)
+    n >= 1_000_000 -> String.format(Locale.US, "%.1fM", n / 1_000_000.0)
+    n >= 1_000 -> String.format(Locale.US, "%.1fK", n / 1_000.0)
     else -> n.toString()
 }
+
+private fun Int.ifZero(default: Int): Int = if (this == 0) default else this
