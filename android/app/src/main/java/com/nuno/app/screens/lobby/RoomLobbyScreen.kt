@@ -164,7 +164,7 @@ fun RoomLobbyScreen(
                                 .border(2.dp, Color.White, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("UNO", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                            Text("NUNO", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("Room: $roomCode", color = Color(0xFF5A607F), fontSize = 11.sp)

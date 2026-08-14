@@ -1,6 +1,5 @@
 package com.nuno.app.screens.game
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,11 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,9 +58,6 @@ fun GameTableScreen(
     showUnoButton: Boolean
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isWide = maxWidth > maxHeight
-
-        // Reference Screen 7/8: Green & Red table - use green for YOUR TURN
         if (isMyTurn) {
             GreenPremiumTableBackground()
         } else {
@@ -84,7 +77,6 @@ fun GameTableScreen(
             onLeaveRoom = onMenu
         )
 
-        // Top opponent - wider higher like reference B1
         opponents.getOrNull(0)?.let { top ->
             Box(
                 modifier = Modifier
@@ -119,7 +111,6 @@ fun GameTableScreen(
             }
         }
 
-        // Center table - draw + discard like reference
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -135,7 +126,6 @@ fun GameTableScreen(
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(32.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Draw pile
                 Box(modifier = Modifier.clickable(enabled = isMyTurn) { onDrawCard() }) {
                     Box(modifier = Modifier.offset(x = 6.dp, y = 4.dp)) {
                         UnoCardBack(size = CardSize.LARGE)
@@ -156,13 +146,12 @@ fun GameTableScreen(
                 }
 
                 topCard?.let { card ->
-                    Box(modifier = Modifier.shadow(16.dp, RoundedCornerShape(12.dp))) {
+                    Box(modifier = Modifier) {
                         UnoCard(card = card, size = CardSize.LARGE)
                     }
                 }
             }
 
-            // Current color pill - like reference  B shows GREEN with dot
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -191,7 +180,6 @@ fun GameTableScreen(
             }
         }
 
-        // Left / Right opponents
         opponents.getOrNull(1)?.let { left ->
             Box(
                 modifier = Modifier
@@ -228,7 +216,6 @@ fun GameTableScreen(
             }
         }
 
-        // Bottom - You + hand + timer like reference
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -291,7 +278,7 @@ fun GameTableScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3D00)),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.height(40.dp)
-                    ) { Text("UNO!", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp) }
+                    ) { Text("NUNO!", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp) }
                 }
                 Timer(remainingTime = remainingTime)
             }
@@ -301,33 +288,44 @@ fun GameTableScreen(
 
 @Composable
 private fun GreenPremiumTableBackground() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Generated premium green table image
-        Image(
-            painter = painterResource(id = com.nuno.app.R.drawable.bg_game_table_green),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-        // Overlay for depth
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0A1F14))) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.35f)), radius = 900f))
+                .padding(horizontal = 48.dp, vertical = 72.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0xFF1B6E2A).copy(0.9f), Color(0xFF0A2F14)),
+                        radius = 800f
+                    ),
+                    RoundedCornerShape(80.dp)
+                )
+                .border(2.dp, Color(0xFF2E8B3F).copy(0.25f), RoundedCornerShape(80.dp))
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.5f)), radius = 900f))
         )
     }
 }
 
 @Composable
 private fun RedPremiumTableBackground() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Generated premium red table image
-        Image(
-            painter = painterResource(id = com.nuno.app.R.drawable.bg_game_table_red),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1F0A0A))) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 48.dp, vertical = 72.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0xFF8B1A1A).copy(0.9f), Color(0xFF2F0A0A)),
+                        radius = 800f
+                    ),
+                    RoundedCornerShape(80.dp)
+                )
+                .border(2.dp, Color(0xFFFF3A3A).copy(0.2f), RoundedCornerShape(80.dp))
         )
-        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.45f)), radius = 900f)))
+        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.55f)), radius = 900f)))
     }
 }

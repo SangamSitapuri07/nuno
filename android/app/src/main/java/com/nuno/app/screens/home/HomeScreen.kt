@@ -140,7 +140,7 @@ fun HomeScreen(
         // Center - CODE DRAWN, NO WHITE BACKGROUND IMAGES
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // UNO Logo - CODE, no image, so no white background visible
+                // NUNO Logo - CODE, no image, so no white background visible - FIXED FROM UNO TO NUNO
                 Box(
                     modifier = Modifier
                         .size(width = 140.dp, height = 80.dp)
@@ -152,7 +152,7 @@ fun HomeScreen(
                         .border(3.dp, Color.White, RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("UNO", color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                    Text("NUNO", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
