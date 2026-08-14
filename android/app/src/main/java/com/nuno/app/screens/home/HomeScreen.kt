@@ -56,182 +56,409 @@ fun HomeScreen(
     val config = LocalConfiguration.current
     val isWide = config.screenWidthDp > config.screenHeightDp
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0A0D1E))) {
-        // Galaxy background - code, no image white issue
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF070A1A))) {
+        // Galaxy background
         Image(
             painter = painterResource(id = R.drawable.bg_galaxy_spiral),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            alpha = 0.35f
+            alpha = 0.28f
         )
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0xFF0E1230).copy(0.5f), Color(0xFF070818).copy(0.9f))))
+                .background(Brush.verticalGradient(listOf(Color(0xFF0E1230).copy(0.4f), Color(0xFF070A1A).copy(0.92f))))
         )
 
-        // Top bar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GameAvatar(username = username.ifEmpty { "Sangam" }, size = 40.dp, borderColor = GameColors.Gold)
-                Column {
-                    Text(username.ifEmpty { "Sangam" }, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Text("Lv. $level", color = GameColors.Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
-                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🪙", fontSize = 12.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(formatNum(coins.ifZero(12450)), color = GameColors.Gold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ================= TOP BAR =================
+            // [Avatar|Sangam] [🪙 700 +] [💎 230 +] [🔔] [⚙️]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .background(Color(0xFF0F1228).copy(alpha = 0.9f), RoundedCornerShape(14.dp))
+                    .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GameAvatar(username = username.ifEmpty { "Sangam" }, size = 38.dp, borderColor = Color(0xFFFFC107))
+                    Column {
+                        Text(username.ifEmpty { "Sangam" }, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("Lv. $level", color = Color(0xFF00E5FF), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
-                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("💎", fontSize = 12.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(formatNum(gems.ifZero(230)), color = GameColors.Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Coins 700 +
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .background(Color(0xFFFFC107), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🪙", fontSize = 10.sp)
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(formatNum(coins.ifZero(700)), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(Color.White.copy(0.12f), CircleShape)
+                                    .clickable { onNavigate("store") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("+", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    // Gems 230 +
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
+                            .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .background(Color(0xFF00E5FF), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("💎", fontSize = 10.sp)
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(formatNum(gems.ifZero(230)), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .background(Color.White.copy(0.12f), CircleShape)
+                                    .clickable { onNavigate("store") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("+", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // Bell
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF1B1F3D), CircleShape)
+                            .border(1.dp, Color(0xFF2C3159), CircleShape)
+                            .clickable { onNotifications() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Notifications, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
+                    }
+                    // Settings
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF1B1F3D), CircleShape)
+                            .border(1.dp, Color(0xFF2C3159), CircleShape)
+                            .clickable { onNavigate("settings") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Settings, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
                     }
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            // ================= MIDDLE STAGE =================
+            // 3 columns: Cards Deck | NUNO Banner | Invite Friends with Slots
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // LEFT: 🃏 CARDS DECK (3D Pedestal)
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .background(Color(0xFF1B1F3D), CircleShape)
-                        .border(1.dp, Color(0xFF2C3159), CircleShape)
-                        .clickable { onNotifications() },
+                        .weight(0.32f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF11142E).copy(0.85f), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp))
+                        .padding(12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
-                }
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(Color(0xFF1B1F3D), CircleShape)
-                        .border(1.dp, Color(0xFF2C3159), CircleShape)
-                        .clickable { onNavigate("settings") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Settings, null, tint = Color(0xFF8A8FA8), modifier = Modifier.size(18.dp))
-                }
-            }
-        }
-
-        // Center - CODE DRAWN, NO WHITE BACKGROUND IMAGES
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // NUNO Logo - CODE, no image, so no white background visible - FIXED FROM UNO TO NUNO
-                Box(
-                    modifier = Modifier
-                        .size(width = 140.dp, height = 80.dp)
-                        .shadow(16.dp, RoundedCornerShape(20.dp), spotColor = Color.Red.copy(0.5f))
-                        .background(
-                            Brush.radialGradient(listOf(Color(0xFFFF1A1A), Color(0xFFCC0000))),
-                            RoundedCornerShape(20.dp)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🃏", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("CARDS DECK", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        // 3D Pedestal - original small asset with proper transparency
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_card_pedestal_3d),
+                            contentDescription = "NUNO 3D Pedestal",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentScale = ContentScale.Fit
                         )
-                        .border(3.dp, Color.White, RoundedCornerShape(20.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("NUNO", color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(Color(0xFF00E5FF).copy(0.12f), RoundedCornerShape(8.dp))
+                                .border(1.dp, Color(0xFF00E5FF).copy(0.3f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text("NUNO • 108 Cards", color = Color(0xFF00E5FF), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // PLAY Button - CODE DRAWN, no image
+                // CENTER: NUNO BANNER
                 Box(
                     modifier = Modifier
-                        .width(200.dp)
-                        .height(72.dp)
-                        .shadow(20.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFE53935).copy(0.6f))
+                        .weight(0.36f)
+                        .fillMaxHeight()
                         .background(
-                            Brush.verticalGradient(listOf(Color(0xFFFF3A3A), Color(0xFFCC0000))),
+                            Brush.verticalGradient(listOf(Color(0xFF151A3A).copy(0.9f), Color(0xFF0E1130).copy(0.95f))),
                             RoundedCornerShape(16.dp)
                         )
-                        .border(2.dp, Color(0xFFFFD700).copy(0.6f), RoundedCornerShape(16.dp))
-                        .clickable { onPlay() },
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("▶", color = Color(0xFFFFD700), fontSize = 14.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("PLAY", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("◀", color = Color(0xFFFFD700), fontSize = 14.sp)
+                        // NUNO Banner - Code drawn, no white background - NUNO not UNO
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(72.dp)
+                                .shadow(12.dp, RoundedCornerShape(14.dp), spotColor = Color(0xFFE53935).copy(0.5f))
+                                .background(
+                                    Brush.verticalGradient(listOf(Color(0xFFFF1A1A), Color(0xFFCC0000))),
+                                    RoundedCornerShape(14.dp)
+                                )
+                                .border(2.5.dp, Color(0xFFFFD700), RoundedCornerShape(14.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("NUNO", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                                Box(
+                                    modifier = Modifier
+                                        .background(Color.Black.copy(0.25f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text("ULTIMATE • CARD • BATTLE", color = Color(0xFFFFD700), fontSize = 6.5.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                                }
+                            }
                         }
-                        Text("Quick Match", color = Color.White.copy(0.8f), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Secondary banner info
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF1B1F3D), RoundedCornerShape(10.dp))
+                                .border(1.dp, Color(0xFF2C3159).copy(0.5f), RoundedCornerShape(10.dp))
+                                .padding(10.dp)
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Current Tier: Diamond I", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Box(modifier = Modifier.background(Color(0xFFFFC107).copy(0.15f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 3.dp)) {
+                                        Text("12,450 🏆", color = Color(0xFFFFC107), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Box(modifier = Modifier.background(Color(0xFF00E5FF).copy(0.15f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 3.dp)) {
+                                        Text("Top 5%", color = Color(0xFF00E5FF), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Daily reward quick access
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF1B1F3D).copy(0.6f), RoundedCornerShape(10.dp))
+                                .border(1.dp, GameColors.Gold.copy(0.2f), RoundedCornerShape(10.dp))
+                                .clickable { onDailyReward() }
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_treasure_chest_3d),
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Daily Reward", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("Claim 500 coins", color = Color(0xFF8A8FA8), fontSize = 8.sp)
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .background(GameColors.Gold, RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text("CLAIM", color = Color.Black, fontSize = 8.sp, fontWeight = FontWeight.Black)
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Card pedestal - use ORIGINAL small asset that has proper transparency (54KB, not white bg)
-                Image(
-                    painter = painterResource(id = R.drawable.ic_card_pedestal_3d),
-                    contentDescription = "NUNO Cards",
-                    modifier = Modifier.size(width = 200.dp, height = 130.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Daily reward - CODE, no image
-                Row(
+                // RIGHT: 👥 INVITE FRIENDS with Slots
+                Box(
                     modifier = Modifier
-                        .background(Color(0xFF1B1F3D).copy(0.9f), RoundedCornerShape(12.dp))
-                        .border(1.dp, GameColors.Gold.copy(0.3f), RoundedCornerShape(12.dp))
-                        .clickable { onDailyReward() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .weight(0.32f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF11142E).copy(0.9f), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp))
+                        .padding(12.dp)
                 ) {
-                    Text("🎁", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Daily Reward", color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Group, null, tint = Color(0xFF00E5FF), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("INVITE FRIENDS", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(Color.White.copy(0.08f), CircleShape)
+                                    .clickable { onNavigate("friends") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("+", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color(0xFF1E2340))
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Slot 1
+                        InviteSlot(
+                            slotNumber = 1,
+                            friend = onlineFriends.getOrNull(0),
+                            onInvite = { onInviteFriend(onlineFriends.getOrNull(0)?.userId ?: "") },
+                            onAddFriend = { onNavigate("friends") }
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Slot 2
+                        InviteSlot(
+                            slotNumber = 2,
+                            friend = onlineFriends.getOrNull(1),
+                            onInvite = { onInviteFriend(onlineFriends.getOrNull(1)?.userId ?: "") },
+                            onAddFriend = { onNavigate("friends") }
+                        )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        // Online count
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0E1130), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(6.dp).background(Color(0xFF00E676), CircleShape))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("${onlineFriends.count { it.isOnline }.ifZero(3)} Online", color = Color(0xFF00E676), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Text("View All", color = Color(0xFF5A607F), fontSize = 9.sp, modifier = Modifier.clickable { onNavigate("friends") })
+                        }
+                    }
+                }
+            }
+
+            // ================= SPLIT BOTTOM LAYER =================
+            // [🏠 Home] [🏆 Leaderboard] [🛒 Shop] | [▶ PLAY]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .navigationBarsPadding(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Left Bottom: Home, Leaderboard, Shop
+                Box(
+                    modifier = Modifier
+                        .weight(0.56f)
+                        .height(64.dp)
+                        .background(Color(0xFF0F1228), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp))
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BottomTabItem(label = "Home", icon = Icons.Default.Home, selected = true) { onNavigate("home") }
+                        BottomTabItem(label = "Leaderboard", icon = Icons.Default.EmojiEvents, selected = false) { onNavigate("leaderboard") }
+                        BottomTabItem(label = "Shop", icon = Icons.Default.ShoppingCart, selected = false) { onNavigate("store") }
+                        BottomTabItem(label = "Profile", icon = Icons.Default.Person, selected = false, showOnlyWide = true) { onNavigate("profile") }
+                    }
+                }
+
+                // Right Bottom: PLAY button
+                Box(
+                    modifier = Modifier
+                        .weight(0.44f)
+                        .height(64.dp)
+                        .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFE53935).copy(0.5f))
+                        .background(
+                            Brush.verticalGradient(listOf(Color(0xFFFF2D2D), Color(0xFFCC0000))),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .border(2.dp, Color(0xFFFFD700), RoundedCornerShape(16.dp))
+                        .clickable { onPlay() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PlayArrow, null, tint = Color(0xFFFFD700), modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text("PLAY", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
+                            Text("Quick Match", color = Color.White.copy(0.7f), fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
             }
         }
 
-        // Bottom nav - like reference
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .align(Alignment.BottomCenter)
-                .background(Color(0xFF0F1228))
-                .border(1.dp, Color(0xFF1E2340))
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BottomNavItem(label = "Home", icon = Icons.Default.Home, selected = true) { onNavigate("home") }
-                BottomNavItem(label = "Friends", icon = Icons.Default.Group, selected = false) { onNavigate("friends") }
-                BottomNavItem(label = "Leaderboard", icon = Icons.Default.EmojiEvents, selected = false) { onNavigate("leaderboard") }
-                BottomNavItem(label = "Shop", icon = Icons.Default.ShoppingCart, selected = false) { onNavigate("store") }
-                BottomNavItem(label = "Profile", icon = Icons.Default.Person, selected = false) { onNavigate("profile") }
-            }
-        }
-
+        // Dialogs
         selectedFriendForAction?.let { friend ->
             FriendActionDialog(
                 friend = friend,
@@ -254,13 +481,77 @@ fun HomeScreen(
 }
 
 @Composable
-private fun BottomNavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
+private fun InviteSlot(slotNumber: Int, friend: OnlineFriendData?, onInvite: () -> Unit, onAddFriend: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(Color(0xFF1B1F3D).copy(0.8f), RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFF2C3159).copy(0.5f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        if (friend == null) {
+            Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.White.copy(0.06f), CircleShape)
+                            .border(1.dp, Color.White.copy(0.1f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF5A607F), modifier = Modifier.size(16.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Slot $slotNumber", color = Color(0xFF5A607F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(Color(0xFF2A3F8A), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color.White.copy(0.15f), RoundedCornerShape(8.dp))
+                        .clickable { onAddFriend() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("➕", color = Color.White, fontSize = 12.sp)
+                }
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                GameAvatar(username = friend.username, size = 32.dp, borderColor = GameColors.Green, showGlow = false)
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(friend.username, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(friend.status, color = Color(0xFF00E676), fontSize = 9.sp)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(GameColors.Green, RoundedCornerShape(8.dp))
+                        .clickable { onInvite() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomTabItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, showOnlyWide: Boolean = false, onClick: () -> Unit) {
+    val config = LocalConfiguration.current
+    val isWide = config.screenWidthDp > 600
+    if (showOnlyWide && !isWide) return
+
     Column(
-        modifier = Modifier.clickable { onClick() }.padding(8.dp),
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = if (selected) Color(0xFFFFC107) else Color(0xFF5A607F), modifier = Modifier.size(22.dp))
-        Spacer(modifier = Modifier.height(2.dp))
+        Icon(icon, null, tint = if (selected) Color(0xFFFFC107) else Color(0xFF5A607F), modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(label, color = if (selected) Color(0xFFFFC107) else Color(0xFF5A607F), fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
     }
 }
