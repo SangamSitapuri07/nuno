@@ -42,7 +42,7 @@ export const initializeSocketHandlers = (io: Server): void => {
           initializeGameHandlers(io, socket);
           initializeVoiceHandlers(io, socket);
 
-          // ═══ CHAT HANDLER ═══
+          // ΓòÉΓòÉΓòÉ CHAT HANDLER ΓòÉΓòÉΓòÉ
           socket.on(SOCKET_EVENTS.CHAT_SEND, async (chatData: { message: string }) => {
             try {
               if (!socket.userId || !socket.roomId || !chatData?.message) return;
@@ -61,11 +61,13 @@ export const initializeSocketHandlers = (io: Server): void => {
             }
           });
 
-          // ═══ INVITE FRIEND ═══
+          // ΓòÉΓòÉΓòÉ INVITE FRIEND ΓòÉΓòÉΓòÉ
           socket.on('invite.send', async (inviteData: { targetUserId: string, roomCode: string }) => {
             try {
               if (!socket.userId || !inviteData?.targetUserId || !inviteData?.roomCode) return;
 
+              // The personal room reaches the target on any instance; the
+              // previous local scan also delivered a duplicate copy.
               io.to(`user:${inviteData.targetUserId}`).emit('invite.received', {
                 fromUserId: socket.userId,
                 fromUsername: socket.username,
@@ -73,26 +75,13 @@ export const initializeSocketHandlers = (io: Server): void => {
                 timestamp: Date.now(),
               });
 
-              for (const [socketId, sock] of io.sockets.sockets) {
-                const s = sock as any;
-                if (s.userId === inviteData.targetUserId) {
-                  io.to(socketId).emit('invite.received', {
-                    fromUserId: socket.userId,
-                    fromUsername: socket.username,
-                    roomCode: inviteData.roomCode,
-                    timestamp: Date.now(),
-                  });
-                  break;
-                }
-              }
-
               socket.emit('invite.sent', { success: true });
             } catch (error) {
               logger.error('Invite error', { error });
             }
           });
 
-          // ═══ ACCEPT INVITE ═══
+          // ΓòÉΓòÉΓòÉ ACCEPT INVITE ΓòÉΓòÉΓòÉ
           socket.on('invite.accept', async (acceptData: { roomCode: string }) => {
             try {
               if (!socket.userId || !acceptData?.roomCode) return;
@@ -122,27 +111,21 @@ export const initializeSocketHandlers = (io: Server): void => {
             }
           });
 
-          // ═══ FRIEND REQUEST ACCEPTED NOTIFICATION ═══
+          // ΓòÉΓòÉΓòÉ FRIEND REQUEST ACCEPTED NOTIFICATION ΓòÉΓòÉΓòÉ
           socket.on('friend.requestAccepted', async (frData: { targetUserId: string }) => {
             try {
               if (!socket.userId || !frData?.targetUserId) return;
 
-              for (const [sid, sock] of io.sockets.sockets) {
-                const s = sock as any;
-                if (s.userId === frData.targetUserId) {
-                  io.to(sid).emit('friend.requestAccepted', {
-                    userId: socket.userId,
-                    username: socket.username
-                  });
-                  break;
-                }
-              }
+              io.to(`user:${frData.targetUserId}`).emit('friend.requestAccepted', {
+                userId: socket.userId,
+                username: socket.username,
+              });
             } catch (err) {
               logger.error('Friend accept notification error', { error: err });
             }
           });
 
-          // ═══ DIRECT MESSAGE (1-on-1 CHAT) ═══
+          // ΓòÉΓòÉΓòÉ DIRECT MESSAGE (1-on-1 CHAT) ΓòÉΓòÉΓòÉ
           socket.on('dm.send', async (dmData: { targetUserId: string, message: string }) => {
             try {
               if (!socket.userId || !dmData?.targetUserId || !dmData?.message) return;
@@ -156,19 +139,6 @@ export const initializeSocketHandlers = (io: Server): void => {
                 message: messageText,
                 timestamp: Date.now(),
               });
-
-              for (const [sid, sock] of io.sockets.sockets) {
-                const s = sock as any;
-                if (s.userId === dmData.targetUserId) {
-                  io.to(sid).emit('dm.received', {
-                    fromUserId: socket.userId,
-                    fromUsername: socket.username,
-                    message: messageText,
-                    timestamp: Date.now(),
-                  });
-                  break;
-                }
-              }
 
               // Also send back to sender for confirmation
               socket.emit('dm.sent', {
@@ -186,7 +156,7 @@ export const initializeSocketHandlers = (io: Server): void => {
           (socket as any)._handlersRegistered = true;
         }
 
-        // ═══ RESTORE MATCH/ROOM STATE ═══
+        // ΓòÉΓòÉΓòÉ RESTORE MATCH/ROOM STATE ΓòÉΓòÉΓòÉ
         const restoreMatchState = async () => {
           try {
             const redis = (await import('../config/redis')).default;
@@ -220,7 +190,7 @@ export const initializeSocketHandlers = (io: Server): void => {
 
         restoreMatchState();
 
-        // ═══ BROADCAST USER STATUS TO FRIENDS ═══
+        // ΓòÉΓòÉΓòÉ BROADCAST USER STATUS TO FRIENDS ΓòÉΓòÉΓòÉ
         friendsService.broadcastUserStatus(io, socket.userId);
 
         logger.info('Socket authentication successful', {
@@ -230,7 +200,7 @@ export const initializeSocketHandlers = (io: Server): void => {
       }
     });
 
-    // ═══ DISCONNECT ═══
+    // ΓòÉΓòÉΓòÉ DISCONNECT ΓòÉΓòÉΓòÉ
     socket.on('disconnect', async (reason) => {
       logger.info('Socket disconnected', {
         socketId: socket.id,
@@ -248,7 +218,7 @@ export const initializeSocketHandlers = (io: Server): void => {
       }
     });
 
-    // ═══ ERROR ═══
+    // ΓòÉΓòÉΓòÉ ERROR ΓòÉΓòÉΓòÉ
     socket.on('error', (error) => {
       logger.error('Socket error', {
         socketId: socket.id,
