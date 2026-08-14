@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.GameDimens
 import com.nuno.app.core.designsystem.components.BottomNavBar
-import com.nuno.app.core.designsystem.components.GamePanel
 
 @Composable
 fun PlayMenuScreen(
@@ -36,148 +35,117 @@ fun PlayMenuScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(GameColors.Background)
+            .background(Color(0xFF0A0D1E))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = GameDimens.bottomNavHeight)
         ) {
-            // Top Bar
+            // Top bar like reference
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(GameDimens.paddingLg),
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GameColors.TextWhite)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(Color(0xFF1B1F3D), RoundedCornerShape(10.dp))
+                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(10.dp))
+                        .clickable { onBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "PLAY MENU",
-                    color = GameColors.TextWhite,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 3.sp
-                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("PLAY MENU", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
             }
 
-            // Menu Grid - 2x2
+            // 2x2 grid like reference screen 3
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = GameDimens.paddingXl),
-                horizontalArrangement = Arrangement.spacedBy(GameDimens.paddingLg)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(GameDimens.paddingLg)
-                ) {
-                    PlayMenuItem(
-                        icon = Icons.Default.FlashOn,
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PlayMenuCard(
                         title = "QUICK MATCH",
-                        description = "Find match with random players",
-                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
-                        iconBg = Color(0xFF4361EE),
-                        onClick = onQuickMatch,
-                        modifier = Modifier.weight(1f)
+                        subtitle = "Find match with\nrandom players",
+                        icon = Icons.Default.FlashOn,
+                        gradient = listOf(Color(0xFF7B4FFF), Color(0xFF5A35CC)),
+                        modifier = Modifier.weight(1f),
+                        onClick = onQuickMatch
                     )
-                    PlayMenuItem(
-                        icon = Icons.Default.Login,
+                    PlayMenuCard(
                         title = "JOIN ROOM",
-                        description = "Join with room code",
-                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
-                        iconBg = Color(0xFF4361EE),
-                        onClick = onJoinRoom,
-                        modifier = Modifier.weight(1f)
+                        subtitle = "Join with room code",
+                        icon = Icons.Default.Login,
+                        gradient = listOf(Color(0xFF2A4B8D), Color(0xFF1E3A6F)),
+                        modifier = Modifier.weight(1f),
+                        onClick = onJoinRoom
                     )
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(GameDimens.paddingLg)
-                ) {
-                    PlayMenuItem(
-                        icon = Icons.Default.AddHome,
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PlayMenuCard(
                         title = "CREATE ROOM",
-                        description = "Create a room and invite friends",
-                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
-                        iconBg = Color(0xFF4361EE),
-                        onClick = onCreateRoom,
-                        modifier = Modifier.weight(1f)
+                        subtitle = "Create a room and\ninvite friends",
+                        icon = Icons.Default.AddHome,
+                        gradient = listOf(Color(0xFF3A3F5E), Color(0xFF2A2F4A)),
+                        modifier = Modifier.weight(1f),
+                        onClick = onCreateRoom
                     )
-                    PlayMenuItem(
-                        icon = Icons.Default.History,
+                    PlayMenuCard(
                         title = "MATCH HISTORY",
-                        description = "View your recent matches",
-                        gradient = listOf(Color(0xFF2A3055), Color(0xFF1A2040)),
-                        iconBg = Color(0xFF4361EE),
-                        onClick = onMatchHistory,
-                        modifier = Modifier.weight(1f)
+                        subtitle = "View your recent\nmatches",
+                        icon = Icons.Default.History,
+                        gradient = listOf(Color(0xFF2A4B8D), Color(0xFF1E3A6F)),
+                        modifier = Modifier.weight(1f),
+                        onClick = onMatchHistory
                     )
                 }
             }
         }
 
-        BottomNavBar(
-            selectedRoute = "home",
-            onNavigate = onNavigate,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        BottomNavBar(selectedRoute = "home", onNavigate = onNavigate, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
 @Composable
-private fun PlayMenuItem(
-    icon: ImageVector,
+private fun PlayMenuCard(
     title: String,
-    description: String,
+    subtitle: String,
+    icon: ImageVector,
     gradient: List<Color>,
-    iconBg: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    GamePanel(
-        modifier = modifier.fillMaxWidth(),
-        borderColor = Color(0xFF4A5580).copy(alpha = 0.5f),
-        onClick = onClick
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(0.5f))
+            .background(Brush.verticalGradient(gradient), RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(0.08f), RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(GameDimens.paddingLg),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
             Box(
                 modifier = Modifier
-                    .size(52.dp)
-                    .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = iconBg)
-                    .background(
-                        color = iconBg,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    .size(48.dp)
+                    .background(Color.White.copy(0.15f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(28.dp))
             }
-
-            Spacer(modifier = Modifier.width(GameDimens.paddingLg))
-
+            Spacer(modifier = Modifier.height(12.dp))
             Column {
-                Text(
-                    text = title,
-                    color = GameColors.TextWhite,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = description,
-                    color = GameColors.TextGray,
-                    fontSize = 11.sp
-                )
+                Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(subtitle, color = Color.White.copy(0.6f), fontSize = 11.sp, lineHeight = 14.sp)
             }
         }
     }

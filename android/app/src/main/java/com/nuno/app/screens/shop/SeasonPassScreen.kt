@@ -2,9 +2,11 @@ package com.nuno.app.screens.shop
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.GameDimens
 import com.nuno.app.core.designsystem.components.*
+import com.nuno.app.screens.home.PremiumGameTableBackground
 
 data class SeasonRewardData(
     val level: Int,
@@ -38,125 +43,189 @@ fun SeasonPassScreen(
     onBack: () -> Unit,
     onPremiumPass: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GameColors.Background)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(GameDimens.paddingLg)
-        ) {
-            // Header
+    Box(modifier = Modifier.fillMaxSize().background(GameColors.Background)) {
+        PremiumGameTableBackground()
+
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GameColors.TextWhite)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.White.copy(0.08f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color.White.copy(0.12f), RoundedCornerShape(12.dp))
+                            .clickable { onBack() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(seasonName, color = GameColors.TextWhite, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                        Text("Ends in: $endsIn", color = GameColors.Gold, fontSize = 11.sp)
+                        Text(seasonName.uppercase(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Text("Ends in: $endsIn", color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🏆", fontSize = 18.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "$currentLevel / $maxLevel",
+                Box(
+                    modifier = Modifier
+                        .background(Color(0xFF1E2249), RoundedCornerShape(12.dp))
+                        .border(1.dp, GameColors.Gold.copy(0.35f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🏆", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("$currentLevel / $maxLevel", color = GameColors.Gold, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // XP progress premium
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF131636), RoundedCornerShape(16.dp))
+                    .border(1.dp, Color.White.copy(0.06f), RoundedCornerShape(16.dp))
+                    .padding(14.dp)
+            ) {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("SEASON PROGRESS", color = Color(0xFF8B92C0), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
+                        Text("${(xpProgress * 100).toInt()}% • Level $currentLevel", color = GameColors.Gold, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LinearProgressIndicator(
+                        progress = { xpProgress },
+                        modifier = Modifier.fillMaxWidth().height(8.dp),
                         color = GameColors.Gold,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                        trackColor = Color(0xFF0E1130)
                     )
                 }
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text("REWARDS TRACK", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            // XP Progress
-            LinearProgressIndicator(
-                progress = { xpProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp),
-                color = GameColors.Gold,
-                trackColor = GameColors.Surface
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Reward track
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 itemsIndexed(rewards) { index, reward ->
-                    SeasonRewardCard(reward = reward, isCurrentLevel = reward.level == currentLevel)
+                    SeasonRewardCardPremium(reward = reward, isCurrentLevel = reward.level == currentLevel)
                 }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Premium pass button
-            GameButton(
-                text = "PREMIUM PASS - Unlock premium rewards",
-                onClick = onPremiumPass,
-                style = ButtonStyle.GOLD,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(20.dp, RoundedCornerShape(18.dp), spotColor = GameColors.Gold.copy(0.4f))
+                    .background(Brush.linearGradient(listOf(Color(0xFFFFD23F), Color(0xFFFF9A00))), RoundedCornerShape(18.dp))
+                    .border(1.5.dp, Color.White.copy(0.3f), RoundedCornerShape(18.dp))
+                    .clickable { onPremiumPass() }
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⭐", fontSize = 20.sp)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text("PREMIUM PASS", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
+                        Text("Unlock 2x rewards & exclusive skins", color = Color.Black.copy(0.7f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Box(
+                        modifier = Modifier
+                            .background(Color.Black.copy(0.15f), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text("$4.99", color = Color.Black, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun SeasonRewardCard(reward: SeasonRewardData, isCurrentLevel: Boolean) {
+private fun SeasonRewardCardPremium(reward: SeasonRewardData, isCurrentLevel: Boolean) {
     val borderColor = when {
         isCurrentLevel -> GameColors.Gold
         reward.isClaimed -> GameColors.Green
         reward.isPremium -> GameColors.Purple
-        else -> GameColors.BorderPurple.copy(alpha = 0.3f)
+        else -> Color.White.copy(0.08f)
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Level number
-        Text(
-            text = "${reward.level}",
-            color = if (isCurrentLevel) GameColors.Gold else GameColors.TextGray,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // Reward card
         Box(
             modifier = Modifier
-                .size(70.dp)
                 .background(
-                    if (reward.isPremium) GameColors.Purple.copy(alpha = 0.2f) else GameColors.SurfaceCard,
-                    RoundedCornerShape(GameDimens.radiusMd)
+                    if (isCurrentLevel) GameColors.Gold.copy(0.18f) else Color(0xFF1E2249),
+                    RoundedCornerShape(8.dp)
                 )
-                .border(
-                    width = if (isCurrentLevel) 2.dp else 1.dp,
-                    color = borderColor,
-                    shape = RoundedCornerShape(GameDimens.radiusMd)
-                ),
+                .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Text("${reward.level}", color = if (isCurrentLevel) GameColors.Gold else Color(0xFF8B92C0), fontSize = 10.sp, fontWeight = FontWeight.Black)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .size(78.dp)
+                .shadow(10.dp, RoundedCornerShape(16.dp), spotColor = borderColor.copy(0.3f))
+                .background(
+                    if (reward.isPremium) Brush.verticalGradient(listOf(Color(0xFF7B5CFF).copy(0.25f), Color(0xFF131636)))
+                    else Brush.verticalGradient(listOf(Color(0xFF1D2148), Color(0xFF131636))),
+                    RoundedCornerShape(16.dp)
+                )
+                .border(if (isCurrentLevel) 2.dp else 1.dp, borderColor, RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
             if (reward.isClaimed) {
-                Text(text = "✓", color = GameColors.Green, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(GameColors.Green, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("✓", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                }
             } else {
-                Text(text = reward.icon, fontSize = 28.sp)
+                Text(reward.icon, fontSize = 30.sp)
+            }
+
+            if (isCurrentLevel) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .background(GameColors.Gold, CircleShape)
+                        .padding(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
+                }
             }
         }
 
         if (reward.isPremium) {
-            Text(text = "⭐", fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .background(Color(0xFF7B5CFF).copy(0.18f), RoundedCornerShape(6.dp))
+                    .border(1.dp, GameColors.Purple.copy(0.3f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+            ) {
+                Text("PREMIUM", color = GameColors.Purple, fontSize = 7.sp, fontWeight = FontWeight.Black)
+            }
         }
     }
 }

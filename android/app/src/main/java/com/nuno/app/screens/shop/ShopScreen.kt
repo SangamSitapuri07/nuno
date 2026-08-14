@@ -1,6 +1,8 @@
 package com.nuno.app.screens.shop
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -13,15 +15,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nuno.app.R
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.GameDimens
 import com.nuno.app.core.designsystem.components.*
+import com.nuno.app.screens.home.PremiumGameTableBackground
 
 data class ShopItemData(
     val id: String,
@@ -45,60 +52,72 @@ fun ShopScreen(
     var selectedCategory by remember { mutableIntStateOf(0) }
     val categories = listOf("FEATURED", "CARDS", "TABLES", "EMOTES", "AVATARS", "TITLES", "BADGES")
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GameColors.Background)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = GameDimens.bottomNavHeight)
-        ) {
-            // Left categories
-            Column(
+    Box(modifier = Modifier.fillMaxSize().background(GameColors.Background)) {
+        PremiumGameTableBackground()
+
+        Row(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(bottom = GameDimens.bottomNavHeight)) {
+            // Sidebar
+            Box(
                 modifier = Modifier
-                    .width(140.dp)
+                    .width(160.dp)
                     .fillMaxHeight()
-                    .background(GameColors.BackgroundDark)
-                    .padding(GameDimens.paddingMd)
+                    .background(Brush.verticalGradient(listOf(Color(0xFF121535).copy(0.98f), Color(0xFF0A0C22))))
+                    .border(1.dp, Color.White.copy(0.06f))
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GameColors.TextWhite, modifier = Modifier.size(18.dp))
+                Column(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White.copy(0.08f), RoundedCornerShape(10.dp))
+                                .border(1.dp, Color.White.copy(0.12f), RoundedCornerShape(10.dp))
+                                .clickable { onBack() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("SHOP", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
                     }
-                    Text("SHOP", color = GameColors.TextWhite, fontSize = 14.sp, fontWeight = FontWeight.Black)
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                categories.forEachIndexed { index, category ->
-                    ShopCategoryItem(
-                        label = category,
-                        isSelected = selectedCategory == index,
-                        onClick = { selectedCategory = index }
-                    )
+                    categories.forEachIndexed { index, category ->
+                        ShopCategoryPremium(label = category, isSelected = selectedCategory == index) { selectedCategory = index }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF0E1130), RoundedCornerShape(12.dp))
+                            .border(1.dp, GameColors.Gold.copy(0.25f), RoundedCornerShape(12.dp))
+                            .padding(10.dp)
+                    ) {
+                        Column {
+                            Text("YOUR COINS", color = Color(0xFF8B92C0), fontSize = 8.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("🪙 $coins", color = GameColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("💎 $gems", color = GameColors.Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
 
-            // Right content
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(GameDimens.paddingLg)
-            ) {
-                // Currency bar
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
+            // Content
+            Column(modifier = Modifier.weight(1f).fillMaxHeight().padding(18.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text("PREMIUM STORE", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
+                        Text("Unlock exclusive items", color = Color(0xFF8B92C0), fontSize = 11.sp)
+                    }
                     CurrencyBar(coins = coins, gems = gems)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Items grid (#23 in reference)
                 val filteredItems = when (selectedCategory) {
                     0 -> items
                     1 -> items.filter { it.type in listOf("CARD_BACK", "CARD_THEME") }
@@ -112,111 +131,142 @@ fun ShopScreen(
 
                 if (filteredItems.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No items in this category", color = GameColors.TextGray, fontSize = 14.sp)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🛒", fontSize = 40.sp)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("No items in this category", color = Color(0xFF8B92C0), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        }
                     }
                 } else {
                     LazyVerticalGrid(
-                        columns = GridCells.Fixed(4),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        columns = GridCells.Fixed(3),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(filteredItems) { item ->
-                            ShopItemCard(item = item, onPurchase = { onPurchase(item) })
+                            ShopItemCardPremium(item = item, onPurchase = { onPurchase(item) })
                         }
                     }
                 }
             }
         }
 
-        BottomNavBar(
-            selectedRoute = "store",
-            onNavigate = onNavigate,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        BottomNavBar(selectedRoute = "store", onNavigate = onNavigate, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
 @Composable
-private fun ShopCategoryItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
-    Row(
+private fun ShopCategoryPremium(label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(vertical = 3.dp)
+            .shadow(if (isSelected) 8.dp else 0.dp, RoundedCornerShape(12.dp), spotColor = GameColors.Blue.copy(0.3f))
             .background(
-                if (isSelected) GameColors.Blue.copy(alpha = 0.3f) else Color.Transparent,
-                RoundedCornerShape(GameDimens.radiusSm)
+                if (isSelected) Brush.linearGradient(listOf(Color(0xFF3B6BFF).copy(0.22f), Color(0xFF7B5CFF).copy(0.14f)))
+                else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                RoundedCornerShape(12.dp)
             )
+            .border(1.dp, if (isSelected) GameColors.Blue.copy(0.35f) else Color.Transparent, RoundedCornerShape(12.dp))
             .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = 14.dp, vertical = 11.dp)
     ) {
-        Text(
-            text = label,
-            color = if (isSelected) GameColors.Gold else GameColors.TextGray,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
+        Text(label, color = if (isSelected) Color.White else Color(0xFF8B92C0), fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold, letterSpacing = 0.8.sp)
     }
 }
 
 @Composable
-private fun ShopItemCard(item: ShopItemData, onPurchase: () -> Unit) {
+private fun ShopItemCardPremium(item: ShopItemData, onPurchase: () -> Unit) {
     val rarityColor = when (item.rarity) {
-        "COMMON" -> GameColors.TextGray
+        "COMMON" -> Color(0xFF8B92C0)
         "RARE" -> GameColors.Cyan
         "EPIC" -> GameColors.Purple
         "LEGENDARY" -> GameColors.Gold
-        else -> GameColors.TextGray
+        else -> Color(0xFF8B92C0)
     }
 
-    GamePanel(
-        borderColor = rarityColor.copy(alpha = 0.5f),
-        onClick = onPurchase
+    val rarityGradient = when (item.rarity) {
+        "RARE" -> listOf(Color(0xFF00D9FF).copy(0.25f), Color(0xFF3B6BFF).copy(0.15f))
+        "EPIC" -> listOf(Color(0xFF7B5CFF).copy(0.3f), Color(0xFF651FFF).copy(0.15f))
+        "LEGENDARY" -> listOf(Color(0xFFFFC71F).copy(0.3f), Color(0xFFFF8A00).copy(0.15f))
+        else -> listOf(Color.White.copy(0.06f), Color.White.copy(0.02f))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(18.dp), spotColor = rarityColor.copy(0.25f))
+            .background(
+                Brush.verticalGradient(listOf(Color(0xFF1D2148), Color(0xFF131636))),
+                RoundedCornerShape(18.dp)
+            )
+            .border(1.2.dp, rarityColor.copy(0.5f), RoundedCornerShape(18.dp))
+            .clickable { onPurchase() }
+            .padding(12.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(GameDimens.paddingSm),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(70.dp)
-                    .background(
-                        Brush.radialGradient(listOf(rarityColor.copy(alpha = 0.2f), GameColors.Surface)),
-                        RoundedCornerShape(GameDimens.radiusSm)
-                    ),
+                    .height(92.dp)
+                    .background(Brush.radialGradient(rarityGradient), RoundedCornerShape(14.dp))
+                    .border(1.dp, rarityColor.copy(0.2f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = item.icon, fontSize = 36.sp)
+                // Use generated 3D pack images where available
+                val imageRes = when {
+                    item.name.contains("Classic", ignoreCase = true) -> R.drawable.ic_store_classic_pack
+                    item.name.contains("Gold", ignoreCase = true) -> R.drawable.ic_store_gold_pack
+                    item.name.contains("Neon", ignoreCase = true) -> R.drawable.ic_store_neon_pack
+                    item.name.contains("Diamond", ignoreCase = true) -> R.drawable.ic_store_diamond_pack
+                    item.name.contains("Emote", ignoreCase = true) -> R.drawable.ic_emote_pack
+                    item.name.contains("Trophy", ignoreCase = true) -> R.drawable.ic_trophy_champion
+                    else -> null
+                }
+
+                if (imageRes != null) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(64.dp)
+                    )
+                } else {
+                    Text(item.icon, fontSize = 40.sp)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .background(rarityColor.copy(0.18f), RoundedCornerShape(6.dp))
+                        .border(1.dp, rarityColor.copy(0.35f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(item.rarity, color = rarityColor, fontSize = 7.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp)
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = item.name,
-                color = GameColors.TextWhite,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
+            Text(item.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 1)
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(GameColors.Surface, RoundedCornerShape(GameDimens.radiusSm))
-                    .padding(vertical = 4.dp),
+                    .background(Color(0xFF0E1130), RoundedCornerShape(10.dp))
+                    .border(1.dp, GameColors.Gold.copy(0.2f), RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "🪙 ${item.price}",
-                    color = GameColors.Gold,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🪙", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("${item.price}", color = GameColors.Gold, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
             }
         }
     }

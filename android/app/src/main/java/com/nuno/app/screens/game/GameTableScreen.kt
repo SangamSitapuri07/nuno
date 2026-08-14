@@ -11,16 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nuno.app.R
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.components.GameAvatar
 
@@ -64,26 +62,15 @@ fun GameTableScreen(
     showUnoButton: Boolean
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val screenHeight = this.maxHeight
+        val isWide = maxWidth > maxHeight
 
-        // Game Table Background Image Asset (R.drawable.nuno_game_table)
-        Image(
-            painter = painterResource(id = R.drawable.nuno_game_table),
-            contentDescription = "NUNO Game Table",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        // Reference Screen 7/8: Green & Red table - use green for YOUR TURN
+        if (isMyTurn) {
+            GreenPremiumTableBackground()
+        } else {
+            RedPremiumTableBackground()
+        }
 
-        // Dynamic adaptive heights for complete phone compatibility
-        val topBarHeight = 38.dp
-        val topOpponentTop = topBarHeight + 2.dp
-        val centerPaddingTop = (screenHeight * 0.30f).coerceIn(105.dp, 135.dp)
-        val centerPaddingBottom = (screenHeight * 0.22f).coerceIn(65.dp, 85.dp)
-
-        val centerCardSize = if (screenHeight < 360.dp) CardSize.MEDIUM else CardSize.LARGE
-        val topCardSize = if (screenHeight < 360.dp) CardSize.XSMALL else CardSize.SMALL
-
-        // TOP BAR
         TopBar(
             roomCode = roomCode,
             gameMode = "Classic (${totalTurns}t)",
@@ -97,256 +84,250 @@ fun GameTableScreen(
             onLeaveRoom = onMenu
         )
 
-        // CENTER TABLE ARENA
+        // Top opponent - wider higher like reference B1
+        opponents.getOrNull(0)?.let { top ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 56.dp)
+                    .width(210.dp)
+                    .height(58.dp)
+                    .background(Color(0xFF12152E).copy(0.85f), RoundedCornerShape(12.dp))
+                    .border(1.dp, if (top.isCurrentTurn) GameColors.Cyan else Color(0xFF2A325A), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GameAvatar(username = top.username, size = 36.dp, borderColor = GameColors.Blue, showGlow = top.isCurrentTurn)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(top.username, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            repeat(top.cardCount.coerceAtMost(5)) {
+                                Box(modifier = Modifier.size(12.dp).background(Color.Black, CircleShape).border(0.5.dp, Color.White, CircleShape))
+                                Spacer(modifier = Modifier.width((-4).dp))
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("${top.cardCount}", color = Color(0xFF8A8FA8), fontSize = 9.sp)
+                        }
+                    }
+                    if (top.isCurrentTurn) {
+                        Box(modifier = Modifier.background(GameColors.Green.copy(0.18f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                            Text("TURN", color = GameColors.Green, fontSize = 7.sp, fontWeight = FontWeight.Black)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Center table - draw + discard like reference
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = centerPaddingTop, bottom = centerPaddingBottom),
+                .padding(top = 110.dp, bottom = 110.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Direction Circular Arrows
             Text(
                 text = if (direction == "CLOCKWISE") "↻" else "↺",
-                color = Color(0xFFFFB300).copy(alpha = 0.25f),
-                fontSize = if (screenHeight < 360.dp) 85.sp else 110.sp,
-                fontWeight = FontWeight.Black
+                color = Color.White.copy(alpha = 0.08f),
+                fontSize = 100.sp,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.Center)
             )
 
-            // Center Draw + Discard Piles
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Draw Pile (with drawPileCount badge)
+            Row(horizontalArrangement = Arrangement.spacedBy(32.dp), verticalAlignment = Alignment.CenterVertically) {
+                // Draw pile
                 Box(modifier = Modifier.clickable(enabled = isMyTurn) { onDrawCard() }) {
-                    UnoCardBack(size = centerCardSize)
+                    Box(modifier = Modifier.offset(x = 6.dp, y = 4.dp)) {
+                        UnoCardBack(size = CardSize.LARGE)
+                    }
+                    UnoCardBack(size = CardSize.LARGE)
                     if (drawPileCount > 0) {
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .offset(x = 4.dp, y = (-4).dp)
-                                .background(Color(0xFF0F142A), CircleShape)
-                                .border(1.dp, Color(0xFFFFD700), CircleShape)
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                .offset(x = 8.dp, y = (-8).dp)
+                                .background(Color(0xFF12152E), RoundedCornerShape(8.dp))
+                                .border(1.dp, GameColors.Gold, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text("$drawPileCount", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
 
-                // Discard Pile
                 topCard?.let { card ->
-                    UnoCard(card = card, size = centerCardSize)
+                    Box(modifier = Modifier.shadow(16.dp, RoundedCornerShape(12.dp))) {
+                        UnoCard(card = card, size = CardSize.LARGE)
+                    }
                 }
             }
 
-            // "Current Card" Pill
-            CurrentCardPanel(
-                topCard = topCard,
-                currentColor = currentColor,
+            // Current color pill - like reference  B shows GREEN with dot
+            Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset(x = if (screenHeight < 360.dp) 72.dp else 88.dp, y = 0.dp)
-            )
+                    .offset(x = 90.dp, y = 10.dp)
+                    .background(Color(0xFF1A1A1A).copy(0.9f), RoundedCornerShape(10.dp))
+                    .border(1.dp, Color.White.copy(0.1f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Column {
+                    Text("Current Color", color = Color(0xFF8A8FA8), fontSize = 7.sp)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(8.dp).background(
+                            when (currentColor) {
+                                "RED" -> Color.Red
+                                "BLUE" -> Color(0xFF2196F3)
+                                "GREEN" -> Color(0xFF4CAF50)
+                                "YELLOW" -> Color(0xFFFFC107)
+                                else -> GameColors.Purple
+                            }, CircleShape
+                        ))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(currentColor, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
 
-        // OPPONENTS (Top, Left, Right)
-        OpponentsLayout(
-            opponents = opponents,
-            topOpponentTop = topOpponentTop,
-            topCardSize = topCardSize
-        )
+        // Left / Right opponents
+        opponents.getOrNull(1)?.let { left ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 12.dp)
+                    .background(Color(0xFF12152E).copy(0.7f), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF2A325A), RoundedCornerShape(12.dp))
+                    .padding(8.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    GameAvatar(username = left.username, size = 32.dp, borderColor = Color(0xFF4CAF50))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(left.username, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row { repeat(left.cardCount.coerceAtMost(4)) { Box(modifier = Modifier.size(10.dp).background(Color.Black, CircleShape).border(0.5.dp, Color.White, CircleShape)) } }
+                }
+            }
+        }
 
-        // BOTTOM LEFT - YOU, QUICK CHAT & EMOTE BUTTON
+        opponents.getOrNull(2)?.let { right ->
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 12.dp)
+                    .background(Color(0xFF12152E).copy(0.7f), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color(0xFF2A325A), RoundedCornerShape(12.dp))
+                    .padding(8.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    GameAvatar(username = right.username, size = 32.dp, borderColor = Color(0xFFFFC107))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(right.username, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row { repeat(right.cardCount.coerceAtMost(4)) { Box(modifier = Modifier.size(10.dp).background(Color.Black, CircleShape).border(0.5.dp, Color.White, CircleShape)) } }
+                }
+            }
+        }
+
+        // Bottom - You + hand + timer like reference
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 10.dp, bottom = 6.dp),
+                .padding(start = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(
-                onClick = onEmotes,
+            Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .background(Color(0xFF0F142A).copy(alpha = 0.85f), CircleShape)
-            ) {
-                Text("😀", fontSize = 18.sp)
-            }
-
-            IconButton(
-                onClick = onQuickChat,
+                    .size(32.dp)
+                    .background(Color(0xFF12152E), CircleShape)
+                    .border(1.dp, Color(0xFF2A325A), CircleShape)
+                    .clickable { onEmotes() },
+                contentAlignment = Alignment.Center
+            ) { Text("😀", fontSize = 16.sp) }
+            Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .background(Color(0xFF0F142A).copy(alpha = 0.85f), CircleShape)
-            ) {
-                Text("💬", fontSize = 16.sp)
-            }
+                    .size(32.dp)
+                    .background(Color(0xFF12152E), CircleShape)
+                    .border(1.dp, Color(0xFF2A325A), CircleShape)
+                    .clickable { onQuickChat() },
+                contentAlignment = Alignment.Center
+            ) { Text("💬", fontSize = 14.sp) }
 
-            PlayerAvatarBadge(username = "You", level = 21, trophies = 1500, badgeColor = Color(0xFFE50914))
+            Box(
+                modifier = Modifier
+                    .background(Color(0xFF12152E).copy(0.85f), RoundedCornerShape(10.dp))
+                    .border(1.dp, Color(0xFF2A325A), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    GameAvatar(username = "You", size = 24.dp, borderColor = Color.Red)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text("You", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text("🏆 1500", color = GameColors.Gold, fontSize = 8.sp)
+                    }
+                }
+            }
         }
 
-        // BOTTOM - Player Hand Fan
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp)
+                .padding(bottom = 8.dp)
         ) {
-            MyHandSection(
-                cards = myHand,
-                currentColor = currentColor,
-                currentValue = topCard?.value ?: "",
-                isMyTurn = isMyTurn,
-                onPlayCard = onPlayCard
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy((-14).dp)) {
+                myHand.forEach { card ->
+                    val isPlayable = isMyTurn && (card.type == "WILD" || card.color == currentColor || card.value == topCard?.value)
+                    UnoCardView(card = card, size = CardSize.MEDIUM, isPlayable = isPlayable, onClick = { onPlayCard(card) })
+                }
+            }
         }
 
-        // BOTTOM RIGHT - Timer Ring & NUNO! Claim Button
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 10.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Timer(remainingTime = remainingTime)
-
-            if (showUnoButton || myHand.size <= 2) {
-                Button(
-                    onClick = onUnoCall,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3D00)),
-                    shape = RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
-                    modifier = Modifier
-                        .height(38.dp)
-                        .shadow(8.dp, RoundedCornerShape(18.dp), spotColor = Color(0xFFFF3D00))
-                ) {
-                    Text("UNO!", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+        Box(modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (showUnoButton || myHand.size <= 2) {
+                    Button(
+                        onClick = onUnoCall,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF3D00)),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.height(40.dp)
+                    ) { Text("UNO!", color = Color.White, fontWeight = FontWeight.Black, fontSize = 12.sp) }
                 }
+                Timer(remainingTime = remainingTime)
             }
         }
     }
 }
 
 @Composable
-private fun OpponentsLayout(
-    opponents: List<OpponentData>,
-    topOpponentTop: Dp,
-    topCardSize: CardSize
-) {
+private fun GreenPremiumTableBackground() {
     Box(modifier = Modifier.fillMaxSize()) {
-        // TOP OPPONENT
-        opponents.getOrNull(0)?.let { top ->
-            Column(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = topOpponentTop),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    PlayerAvatarBadge(username = top.username, level = 23, trophies = 1250, badgeColor = Color(0xFF1976D2))
-                }
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy((-12).dp)) {
-                    repeat(top.cardCount.coerceAtMost(7)) {
-                        UnoCardBack(size = topCardSize)
-                    }
-                }
-            }
-        }
-
-        // LEFT OPPONENT
-        opponents.getOrNull(1)?.let { left ->
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                PlayerAvatarBadge(username = left.username, level = 19, trophies = 980, badgeColor = Color(0xFF388E3C))
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy((-12).dp)) {
-                    repeat(left.cardCount.coerceAtMost(6)) {
-                        UnoCardBack(size = topCardSize)
-                    }
-                }
-            }
-        }
-
-        // RIGHT OPPONENT
-        opponents.getOrNull(2)?.let { right ->
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                PlayerAvatarBadge(username = right.username, level = 18, trophies = 1110, badgeColor = Color(0xFFFBC02D))
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy((-12).dp)) {
-                    repeat(right.cardCount.coerceAtMost(6)) {
-                        UnoCardBack(size = topCardSize)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlayerAvatarBadge(username: String, level: Int, trophies: Int, badgeColor: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Box {
-            GameAvatar(username = username, size = 28.dp, borderColor = badgeColor)
-            Box(
-                modifier = Modifier
-                    .size(13.dp)
-                    .background(badgeColor, CircleShape)
-                    .align(Alignment.TopEnd),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("$level", color = Color.White, fontSize = 7.5.sp, fontWeight = FontWeight.Bold)
-            }
-        }
+        // Generated premium green table image
+        Image(
+            painter = painterResource(id = com.nuno.app.R.drawable.bg_game_table_green),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        // Overlay for depth
         Box(
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.8f), RoundedCornerShape(5.dp))
-                .padding(horizontal = 5.dp, vertical = 2.dp)
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(username, color = Color.White, fontSize = 8.5.sp, fontWeight = FontWeight.Bold)
-                Text("🏆 $trophies", color = Color(0xFFFFD700), fontSize = 7.sp, fontWeight = FontWeight.Bold)
-            }
-        }
+                .fillMaxSize()
+                .background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.35f)), radius = 900f))
+        )
     }
 }
 
 @Composable
-private fun MyHandSection(
-    cards: List<GameCardData>,
-    currentColor: String,
-    currentValue: String,
-    isMyTurn: Boolean,
-    onPlayCard: (GameCardData) -> Unit
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(if (cards.size > 8) (-18).dp else (-12).dp),
-        modifier = Modifier.padding(horizontal = 65.dp)
-    ) {
-        cards.forEachIndexed { index, card ->
-            val isPlayable = isMyTurn && (card.type == "WILD" || card.color == currentColor || card.value == currentValue)
-            UnoCardView(
-                card = card,
-                size = CardSize.MEDIUM,
-                isPlayable = isPlayable,
-                onClick = { onPlayCard(card) }
-            )
-        }
+private fun RedPremiumTableBackground() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Generated premium red table image
+        Image(
+            painter = painterResource(id = com.nuno.app.R.drawable.bg_game_table_red),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.Transparent, Color.Black.copy(0.45f)), radius = 900f)))
     }
 }

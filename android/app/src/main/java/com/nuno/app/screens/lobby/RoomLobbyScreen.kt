@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -15,18 +14,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuno.app.core.designsystem.GameColors
-import com.nuno.app.core.designsystem.GameDimens
-import com.nuno.app.core.designsystem.components.*
+import com.nuno.app.core.designsystem.components.GameAvatar
 
 data class LobbyPlayerData(
     val userId: String,
@@ -57,345 +52,181 @@ fun RoomLobbyScreen(
     onInviteFriend: (String) -> Unit,
     onKickPlayer: (String) -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboardManager.current
+    var showInvite by remember { mutableStateOf(false) }
     val currentPlayer = players.find { it.userId == currentUserId }
     val isHost = currentPlayer?.isHost == true
-    val allReady = players.size >= 2 && players.all { it.isReady }
 
-    var showInvitePicker by remember { mutableStateOf(false) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GameColors.Background)
-    ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            // LEFT - Room Info + UNO Card
-            Column(
-                modifier = Modifier
-                    .weight(0.55f)
-                    .fillMaxHeight()
-                    .padding(GameDimens.paddingLg)
-            ) {
-                // Back + Title
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = GameColors.TextWhite)
-                    }
-                    Text(
-                        text = "ROOM LOBBY",
-                        color = GameColors.TextWhite,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Room Code Panel
-                GamePanel(
-                    modifier = Modifier.fillMaxWidth(),
-                    borderColor = GameColors.Gold.copy(alpha = 0.5f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(GameDimens.paddingMd),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text("ROOM CODE", color = GameColors.TextGray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            Text(
-                                text = roomCode,
-                                color = GameColors.Gold,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 4.sp
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            SmallIconButton(
-                                icon = Icons.Default.ContentCopy,
-                                onClick = {
-                                    clipboardManager.setText(AnnotatedString(roomCode))
-                                }
-                            )
-                            SmallIconButton(
-                                icon = Icons.Default.Share,
-                                onClick = { }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Center UNO Card
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0A0D1E))) {
+        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)) {
+            // Header - Room Name & Code like reference 5
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .size(36.dp)
+                        .background(Color(0xFF1B1F3D), RoundedCornerShape(10.dp))
+                        .border(1.dp, Color(0xFF2C3159), RoundedCornerShape(10.dp))
+                        .clickable { onBack() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 120.dp, height = 180.dp)
-                            .shadow(16.dp, RoundedCornerShape(12.dp), spotColor = GameColors.Purple)
-                            .background(
-                                brush = Brush.linearGradient(listOf(GameColors.Blue, GameColors.Purple)),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .border(3.dp, GameColors.Gold, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "NUNO",
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Black
-                        )
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("ROOM LOBBY", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("ROOM CODE: ", color = Color(0xFF5A607F), fontSize = 11.sp)
+                        Text(roomCode.ifEmpty { "AB12C3" }, color = GameColors.Gold, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.ContentCopy, null, tint = GameColors.Gold, modifier = Modifier.size(16.dp).clickable { clipboard.setText(AnnotatedString(roomCode)) })
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Bottom buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    GameButton(
-                        text = "INVITE FRIEND",
-                        onClick = { showInvitePicker = true },
-                        style = ButtonStyle.OUTLINE,
-                        modifier = Modifier.weight(1f)
-                    )
-                    GameButton(
-                        text = if (countdown > 0) "STARTING ${countdown}s" else "START GAME",
-                        onClick = if (isHost && allReady) onStartGame else onReady,
-                        style = if (allReady) ButtonStyle.GREEN else ButtonStyle.GOLD,
-                        modifier = Modifier.weight(1f),
-                        enabled = true
-                    )
-                }
+                Spacer(modifier = Modifier.weight(1f))
+                Text("${players.size}/$maxPlayers", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
-            // RIGHT - Players List
-            Column(
-                modifier = Modifier
-                    .weight(0.45f)
-                    .fillMaxHeight()
-                    .padding(GameDimens.paddingLg)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Left - Players list like reference
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF12152E), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp))
+                        .padding(12.dp)
                 ) {
-                    Text(
-                        text = "PLAYERS",
-                        color = GameColors.TextWhite,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 2.sp
-                    )
-                    Text(
-                        text = "${players.size}/$maxPlayers",
-                        color = GameColors.Gold,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(players) { player ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        if (player.userId == currentUserId) GameColors.Gold.copy(0.1f) else Color(0xFF1B1F3D),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .border(1.dp, if (player.isHost) GameColors.Gold.copy(0.5f) else Color(0xFF2C3159).copy(0.5f), RoundedCornerShape(12.dp))
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                GameAvatar(username = player.username, size = 36.dp, borderColor = if (player.isHost) GameColors.Gold else GameColors.Blue)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(player.username, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        if (player.isHost) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("👑", fontSize = 10.sp)
+                                        }
+                                        if (player.userId == currentUserId) {
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("(You)", color = GameColors.Gold, fontSize = 9.sp)
+                                        }
+                                    }
+                                    Text(if (player.isReady) "Ready" else "Not Ready", color = if (player.isReady) GameColors.Green else Color(0xFF5A607F), fontSize = 10.sp)
+                                }
+                                if (isHost && player.userId != currentUserId) {
+                                    Icon(Icons.Default.Close, null, tint = Color(0xFFFF5A5A), modifier = Modifier.size(18.dp).clickable { onKickPlayer(player.userId) })
+                                }
+                            }
+                        }
+                        val emptySlots = maxPlayers - players.size
+                        items(emptySlots) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color(0xFF0E1130).copy(0.5f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(12.dp))
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Waiting for player...", color = Color(0xFF5A607F), fontSize = 11.sp)
+                            }
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
+                // Right - UNO card center like reference
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(Color(0xFF12152E), RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(players) { player ->
-                        PlayerListCard(
-                            player = player,
-                            isCurrentUser = player.userId == currentUserId,
-                            canKick = isHost && player.userId != currentUserId,
-                            onKick = { onKickPlayer(player.userId) }
-                        )
-                    }
-
-                    // Empty slots
-                    val emptySlots = maxPlayers - players.size
-                    items(emptySlots) {
-                        EmptyPlayerSlot()
-                    }
-                }
-            }
-        }
-
-        if (showInvitePicker) {
-            InviteFriendDialog(
-                friends = onlineFriends,
-                onInvite = { friendId ->
-                    onInviteFriend(friendId)
-                    showInvitePicker = false
-                },
-                onDismiss = { showInvitePicker = false }
-            )
-        }
-    }
-}
-
-@Composable
-private fun InviteFriendDialog(
-    friends: List<InvitableFriend>,
-    onInvite: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Invite a friend") },
-        text = {
-            val online = friends.filter { it.isOnline }
-            if (online.isEmpty()) {
-                Text("No friends online right now.", color = GameColors.TextGray)
-            } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(online) { friend ->
-                        Row(
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onInvite(friend.userId) }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .size(width = 100.dp, height = 140.dp)
+                                .background(Color(0xFFE53935), RoundedCornerShape(12.dp))
+                                .border(2.dp, Color.White, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            GameAvatar(username = friend.username, size = 32.dp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(friend.username, color = GameColors.TextWhite, fontSize = 14.sp)
+                            Text("UNO", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Room: $roomCode", color = Color(0xFF5A607F), fontSize = 11.sp)
+                        if (countdown > 0) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Starting in $countdown...", color = GameColors.Green, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        }
-    )
-}
 
-@Composable
-private fun PlayerListCard(
-    player: LobbyPlayerData,
-    isCurrentUser: Boolean,
-    canKick: Boolean,
-    onKick: () -> Unit
-) {
-    GamePanel(
-        borderColor = when {
-            isCurrentUser -> GameColors.Gold.copy(alpha = 0.7f)
-            player.isReady -> GameColors.Green.copy(alpha = 0.5f)
-            else -> GameColors.BorderPurple.copy(alpha = 0.3f)
-        }
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(GameDimens.paddingMd),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            GameAvatar(
-                username = player.username,
-                size = 40.dp,
-                borderColor = if (player.isHost) GameColors.Gold else GameColors.Blue
-            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = player.username,
-                        color = GameColors.TextWhite,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (player.isHost) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "👑", fontSize = 12.sp)
-                    }
-                    if (isCurrentUser) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "(You)", color = GameColors.Gold, fontSize = 10.sp)
-                    }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { showInvite = true },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF2C3159))
+                ) {
+                    Text("INVITE FRIEND", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(
-                    text = "Lv. ${player.level} • ${player.ping}ms",
-                    color = GameColors.TextGray,
-                    fontSize = 10.sp
-                )
-            }
-
-            // Ready indicator
-            Box(
-                modifier = Modifier
-                    .background(
-                        if (player.isReady) GameColors.Green else GameColors.Red.copy(alpha = 0.5f),
-                        RoundedCornerShape(12.dp)
-                    )
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = if (player.isReady) "READY" else "NOT READY",
-                    color = Color.White,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            if (canKick) {
-                Spacer(modifier = Modifier.width(6.dp))
-                Icon(
-                    Icons.Default.Close,
-                    null,
-                    tint = GameColors.Red,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onKick() }
-                )
+                Button(
+                    onClick = if (isHost) onStartGame else onReady,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GameColors.Gold)
+                ) {
+                    Text(if (isHost) "START GAME" else if (currentPlayer?.isReady == true) "READY ✓" else "READY", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                }
             }
         }
-    }
-}
 
-@Composable
-private fun EmptyPlayerSlot() {
-    GamePanel(borderColor = GameColors.BorderPurple.copy(alpha = 0.15f)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(GameDimens.paddingMd),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Waiting for player...",
-                color = GameColors.TextDark,
-                fontSize = 12.sp
+        if (showInvite) {
+            AlertDialog(
+                onDismissRequest = { showInvite = false },
+                containerColor = Color(0xFF12152E),
+                title = { Text("Invite Friends", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = {
+                    Column {
+                        if (onlineFriends.filter { it.isOnline }.isEmpty()) {
+                            Text("No friends online", color = Color(0xFF5A607F), fontSize = 12.sp)
+                        } else {
+                            onlineFriends.filter { it.isOnline }.forEach { friend ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onInviteFriend(friend.userId); showInvite = false }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    GameAvatar(username = friend.username, size = 32.dp)
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(friend.username, color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                                    Text("INVITE", color = GameColors.Green, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { showInvite = false }) { Text("Close", color = Color.White) } }
             )
         }
-    }
-}
-
-@Composable
-private fun SmallIconButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .background(GameColors.Surface, CircleShape)
-            .border(1.dp, GameColors.BorderPurple.copy(alpha = 0.3f), CircleShape)
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, null, tint = GameColors.Gold, modifier = Modifier.size(18.dp))
     }
 }
