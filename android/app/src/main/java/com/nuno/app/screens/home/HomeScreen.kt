@@ -57,7 +57,7 @@ fun HomeScreen(
     val isWide = config.screenWidthDp > config.screenHeightDp
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0A0D1E))) {
-        // Background galaxy subtle
+        // Galaxy background - code, no image white issue
         Image(
             painter = painterResource(id = R.drawable.bg_galaxy_spiral),
             contentDescription = null,
@@ -68,10 +68,10 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0xFF0E1230).copy(0.6f), Color(0xFF070818).copy(0.9f))))
+                .background(Brush.verticalGradient(listOf(Color(0xFF0E1230).copy(0.5f), Color(0xFF070818).copy(0.9f))))
         )
 
-        // Top bar - reference: avatar Sangam, coins 12,450, gems 230
+        // Top bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,7 +87,6 @@ fun HomeScreen(
                     Text("Lv. $level", color = GameColors.Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                // Coins pill like reference
                 Box(
                     modifier = Modifier
                         .background(Color(0xFF1B1F3D), RoundedCornerShape(20.dp))
@@ -138,73 +137,87 @@ fun HomeScreen(
             }
         }
 
-        // Center - PLAY button red like reference Screen 2 - using generated 3D assets
+        // Center - CODE DRAWN, NO WHITE BACKGROUND IMAGES
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // UNO Logo 3D image - generated asset
-                Image(
-                    painter = painterResource(id = R.drawable.ic_uno_logo_3d),
-                    contentDescription = "UNO Logo",
+                // UNO Logo - CODE, no image, so no white background visible
+                Box(
                     modifier = Modifier
                         .size(width = 140.dp, height = 80.dp)
-                        .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = Color.Red.copy(0.5f))
-                )
+                        .shadow(16.dp, RoundedCornerShape(20.dp), spotColor = Color.Red.copy(0.5f))
+                        .background(
+                            Brush.radialGradient(listOf(Color(0xFFFF1A1A), Color(0xFFCC0000))),
+                            RoundedCornerShape(20.dp)
+                        )
+                        .border(3.dp, Color.White, RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("UNO", color = Color.White, fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
-                // PLAY button red 3D image - generated asset like reference
-                Image(
-                    painter = painterResource(id = R.drawable.ic_play_red_3d),
-                    contentDescription = "PLAY",
+                // PLAY Button - CODE DRAWN, no image
+                Box(
                     modifier = Modifier
                         .width(200.dp)
-                        .height(80.dp)
+                        .height(72.dp)
                         .shadow(20.dp, RoundedCornerShape(16.dp), spotColor = Color(0xFFE53935).copy(0.6f))
-                        .clickable { onPlay() }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Optional: Show card pedestal asset for premium feel (generated)
-                Image(
-                    painter = painterResource(id = R.drawable.ic_nuno_pedestal_home),
-                    contentDescription = "Card Pedestal",
-                    modifier = Modifier
-                        .size(width = 180.dp, height = 110.dp)
+                        .background(
+                            Brush.verticalGradient(listOf(Color(0xFFFF3A3A), Color(0xFFCC0000))),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .border(2.dp, Color(0xFFFFD700).copy(0.6f), RoundedCornerShape(16.dp))
                         .clickable { onPlay() },
-                    alpha = 0.9f
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("▶", color = Color(0xFFFFD700), fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("PLAY", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("◀", color = Color(0xFFFFD700), fontSize = 14.sp)
+                        }
+                        Text("Quick Match", color = Color.White.copy(0.8f), fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Card pedestal - use ORIGINAL small asset that has proper transparency (54KB, not white bg)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_card_pedestal_3d),
+                    contentDescription = "NUNO Cards",
+                    modifier = Modifier.size(width = 200.dp, height = 130.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Daily reward with generated chest image
+                // Daily reward - CODE, no image
                 Row(
                     modifier = Modifier
-                        .background(Color(0xFF1B1F3D).copy(0.8f), RoundedCornerShape(12.dp))
+                        .background(Color(0xFF1B1F3D).copy(0.9f), RoundedCornerShape(12.dp))
                         .border(1.dp, GameColors.Gold.copy(0.3f), RoundedCornerShape(12.dp))
                         .clickable { onDailyReward() }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_daily_reward_chest_gold),
-                        contentDescription = "Daily",
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("🎁", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Daily Reward", color = GameColors.Gold, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        // Bottom nav - reference: Home, Friends, Leaderboard, Shop, Profile
+        // Bottom nav - like reference
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
                 .align(Alignment.BottomCenter)
                 .background(Color(0xFF0F1228))
-                .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(0.dp))
+                .border(1.dp, Color(0xFF1E2340))
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -243,14 +256,12 @@ fun HomeScreen(
 @Composable
 private fun BottomNavItem(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, selected: Boolean, onClick: () -> Unit) {
     Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .padding(8.dp),
+        modifier = Modifier.clickable { onClick() }.padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = if (selected) GameColors.Gold else Color(0xFF5A607F), modifier = Modifier.size(22.dp))
+        Icon(icon, null, tint = if (selected) Color(0xFFFFC107) else Color(0xFF5A607F), modifier = Modifier.size(22.dp))
         Spacer(modifier = Modifier.height(2.dp))
-        Text(label, color = if (selected) GameColors.Gold else Color(0xFF5A607F), fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+        Text(label, color = if (selected) Color(0xFFFFC107) else Color(0xFF5A607F), fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
     }
 }
 
@@ -269,17 +280,9 @@ private fun FriendActionDialog(friend: OnlineFriendData, onSendDm: () -> Unit, o
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(friend.username, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = onSendDm,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3F8A))
-                ) { Text("Message", color = Color.White) }
+                Button(onClick = onSendDm, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A3F8A))) { Text("Message", color = Color.White) }
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = onInvite,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = GameColors.Green)
-                ) { Text("Invite", color = Color.White) }
+                Button(onClick = onInvite, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = GameColors.Green)) { Text("Invite", color = Color.White) }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cancel", color = Color.White) }
             }
