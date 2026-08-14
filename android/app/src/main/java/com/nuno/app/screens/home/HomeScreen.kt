@@ -1,5 +1,6 @@
 package com.nuno.app.screens.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,13 +13,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.nuno.app.R
 import com.nuno.app.core.designsystem.GameColors
 import com.nuno.app.core.designsystem.components.GameAvatar
 import com.nuno.app.screens.social.DirectMessageDialog
@@ -50,7 +55,16 @@ fun HomeScreen(
     var activeDmFriendData by remember { mutableStateOf<FriendData?>(null) }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF070A1A))) {
-        // Top Bar - minimal padding 4dp, no waste
+        // Background image asset - galaxy
+        Image(
+            painter = painterResource(id = R.drawable.bg_galaxy_spiral),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            alpha = 0.32f
+        )
+
+        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -92,8 +106,7 @@ fun HomeScreen(
             }
         }
 
-        // Middle Stage - positioned tight, no wasted space, using Box alignment exactly as ASCII
-        // LEFT: CARDS DECK
+        // LEFT: CARDS DECK - USING IMAGE ASSET (3D Pedestal)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -111,40 +124,45 @@ fun HomeScreen(
                     Text("CARDS DECK", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Box(modifier = Modifier.fillMaxWidth().weight(1f).background(Brush.verticalGradient(listOf(Color(0xFF1E2A5A), Color(0xFF11142E))), RoundedCornerShape(8.dp)).border(1.dp, Color(0xFF2A3A6B).copy(0.4f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-                        MiniCard(Color(0xFFE53935), "1")
-                        MiniCard(Color(0xFFFFC107), "3")
-                        MiniCard(Color(0xFF1E88E5), "8", true)
-                        MiniCard(Color(0xFF43A047), "2")
-                        MiniCard(Color.Black, "+4", wild = true)
-                    }
-                }
+                // IMAGE ASSET for 3D pedestal - original small asset + new generated with transparent bg
+                Image(
+                    painter = painterResource(id = R.drawable.ic_card_pedestal_3d),
+                    contentDescription = "Cards Deck 3D Pedestal",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentScale = ContentScale.Fit
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF00E5FF).copy(0.1f), RoundedCornerShape(5.dp)).padding(vertical = 2.dp), contentAlignment = Alignment.Center) {
-                    Text("NUNO • 108", color = Color(0xFF00E5FF), fontSize = 6.sp, fontWeight = FontWeight.Bold)
+                    Text("NUNO • 108 Cards", color = Color(0xFF00E5FF), fontSize = 6.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        // CENTER: NUNO BANNER - tight centered top
+        // CENTER: NUNO BANNER - USING IMAGE ASSET
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 48.dp)
                 .width(160.dp)
-                .height(52.dp)
-                .background(Brush.horizontalGradient(listOf(Color(0xFFD32F2F), Color(0xFFB71C1C))), RoundedCornerShape(10.dp))
-                .border(2.dp, Color(0xFFFFC107), RoundedCornerShape(10.dp)),
+                .height(72.dp)
+                .shadow(8.dp, RoundedCornerShape(10.dp), spotColor = Color(0xFFE53935).copy(0.4f))
+                .background(Color(0xFF11142E), RoundedCornerShape(10.dp))
+                .border(1.dp, Color(0xFF1E2340), RoundedCornerShape(10.dp))
+                .padding(4.dp),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("NUNO", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                Text("ULTIMATE CARD BATTLE", color = Color(0xFFFFD700), fontSize = 5.sp, fontWeight = FontWeight.Black)
-            }
+            // Using generated NUNO banner image asset with dark bg cleaned to transparent
+            Image(
+                painter = painterResource(id = R.drawable.ic_nuno_banner_new),
+                contentDescription = "NUNO Banner",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
         }
 
-        // RIGHT: INVITE FRIENDS
+        // RIGHT: INVITE FRIENDS - code + icon asset
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -157,8 +175,13 @@ fun HomeScreen(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("👥", fontSize = 9.sp)
-                    Spacer(modifier = Modifier.width(3.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_invite_friends_header),
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        alpha = 0.9f
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text("INVITE FRIENDS", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                     Spacer(modifier = Modifier.weight(1f))
                     Box(modifier = Modifier.size(14.dp).background(Color.White.copy(0.08f), CircleShape).clickable { onNavigate("friends") }, contentAlignment = Alignment.Center) { Text("+", color = Color.White, fontSize = 8.sp) }
@@ -166,29 +189,9 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF1E2340)))
                 Spacer(modifier = Modifier.height(4.dp))
-                // Slot 1
-                Box(modifier = Modifier.fillMaxWidth().height(40.dp).background(Color(0xFF1B1F3D).copy(0.7f), RoundedCornerShape(6.dp)).border(1.dp, Color(0xFF2C3159).copy(0.4f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(20.dp).background(Color.White.copy(0.05f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF5A607F), modifier = Modifier.size(10.dp)) }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Slot 1", color = Color(0xFF5A607F), fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Box(modifier = Modifier.size(18.dp).background(Color(0xFF2A3F8A), RoundedCornerShape(4.dp)).clickable { onNavigate("friends") }, contentAlignment = Alignment.Center) { Text("➕", color = Color.White, fontSize = 8.sp) }
-                    }
-                }
+                SlotRow(slot = 1, friend = onlineFriends.getOrNull(0), onInvite = { onInviteFriend(onlineFriends.getOrNull(0)?.userId ?: "") }, onAdd = { onNavigate("friends") })
                 Spacer(modifier = Modifier.height(4.dp))
-                // Slot 2
-                Box(modifier = Modifier.fillMaxWidth().height(40.dp).background(Color(0xFF1B1F3D).copy(0.7f), RoundedCornerShape(6.dp)).border(1.dp, Color(0xFF2C3159).copy(0.4f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(20.dp).background(Color.White.copy(0.05f), CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF5A607F), modifier = Modifier.size(10.dp)) }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Slot 2", color = Color(0xFF5A607F), fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Box(modifier = Modifier.size(18.dp).background(Color(0xFF2A3F8A), RoundedCornerShape(4.dp)).clickable { onNavigate("friends") }, contentAlignment = Alignment.Center) { Text("➕", color = Color.White, fontSize = 8.sp) }
-                    }
-                }
+                SlotRow(slot = 2, friend = onlineFriends.getOrNull(1), onInvite = { onInviteFriend(onlineFriends.getOrNull(1)?.userId ?: "") }, onAdd = { onNavigate("friends") })
                 Spacer(modifier = Modifier.weight(1f))
                 Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF0E1130), RoundedCornerShape(5.dp)).padding(horizontal = 5.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(4.dp).background(Color(0xFF00E676), CircleShape))
@@ -198,7 +201,7 @@ fun HomeScreen(
             }
         }
 
-        // Split Bottom Layer - tight at bottom, no waste
+        // SPLIT BOTTOM LAYER
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -224,20 +227,23 @@ fun HomeScreen(
                 }
             }
 
+            // PLAY button - USING IMAGE ASSET with dark bg
             Box(
                 modifier = Modifier
                     .weight(0.42f)
                     .height(46.dp)
-                    .background(Brush.horizontalGradient(listOf(Color(0xFFFF2D2D), Color(0xFFB71C1C))), RoundedCornerShape(10.dp))
+                    .shadow(10.dp, RoundedCornerShape(10.dp), spotColor = Color(0xFFE53935).copy(0.4f))
+                    .background(Color(0xFF0A0D1E), RoundedCornerShape(10.dp))
                     .border(2.dp, Color(0xFFFFD700), RoundedCornerShape(10.dp))
                     .clickable { onPlay() },
                 contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("▶", color = Color(0xFFFFD700), fontSize = 12.sp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("PLAY", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.ic_play_button_new),
+                    contentDescription = "PLAY",
+                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    contentScale = ContentScale.Fit
+                )
             }
         }
 
@@ -258,16 +264,44 @@ fun HomeScreen(
 }
 
 @Composable
-private fun MiniCard(color: Color, value: String, isNuno: Boolean = false, wild: Boolean = false) {
+private fun SlotRow(slot: Int, friend: OnlineFriendData?, onInvite: () -> Unit, onAdd: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(width = 22.dp, height = 32.dp)
-            .background(Color.Black, RoundedCornerShape(3.dp))
-            .border(1.dp, Color.White, RoundedCornerShape(3.dp))
-            .padding(1.dp)
+            .fillMaxWidth()
+            .height(40.dp)
+            .background(Color(0xFF1B1F3D).copy(0.7f), RoundedCornerShape(6.dp))
+            .border(1.dp, Color(0xFF2C3159).copy(0.4f), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(modifier = Modifier.fillMaxSize().background(color, RoundedCornerShape(2.dp)), contentAlignment = Alignment.Center) {
-            Text(if (isNuno) "N" else if (wild) "+4" else value, color = if (color == Color(0xFFFFC107)) Color.Black else Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
+        if (friend == null) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(18.dp).background(Color.White.copy(0.05f), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.PersonAdd, null, tint = Color(0xFF5A607F), modifier = Modifier.size(10.dp))
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Slot $slot", color = Color(0xFF5A607F), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                }
+                Box(modifier = Modifier.size(18.dp).background(Color(0xFF2A3F8A), RoundedCornerShape(4.dp)).clickable { onAdd() }, contentAlignment = Alignment.Center) {
+                    Text("➕", color = Color.White, fontSize = 8.sp)
+                }
+            }
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(20.dp).background(Brush.radialGradient(listOf(Color(0xFF7B5CFF), Color(0xFF3A2A8A))), CircleShape).border(1.dp, Color(0xFF00E676), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) { Text(friend.username.first().uppercase(), color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black) }
+                Spacer(modifier = Modifier.width(4.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(friend.username, color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text("Offline", color = Color(0xFF00E676), fontSize = 6.sp)
+                }
+                Box(modifier = Modifier.size(18.dp).background(Color(0xFF00C853), RoundedCornerShape(4.dp)).clickable { onInvite() }, contentAlignment = Alignment.Center) {
+                    Text("✓", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
+                }
+            }
         }
     }
 }
