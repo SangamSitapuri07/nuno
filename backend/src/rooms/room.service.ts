@@ -13,9 +13,9 @@ const ROOM_EXPIRY = 3600;
 
 export class RoomService {
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // CREATE ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async createRoom(
     userId: string,
@@ -24,7 +24,7 @@ export class RoomService {
     input: CreateRoomInput
   ): Promise<Room> {
     // Check if player already in room
-    const existingRoom = await redisClient.get(`player:room:${userId}`);
+    const existingRoom = await this.resolveActiveRoom(userId);
     if (existingRoom) {
       throw { code: 'ALREADY_IN_ROOM', message: 'Already in a room.', status: 400 };
     }
@@ -67,9 +67,9 @@ export class RoomService {
     return room;
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // JOIN ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async joinRoom(
     userId: string,
@@ -78,7 +78,7 @@ export class RoomService {
     input: JoinRoomInput
   ): Promise<Room> {
     // Check if player already in room
-    const existingRoom = await redisClient.get(`player:room:${userId}`);
+    const existingRoom = await this.resolveActiveRoom(userId);
     if (existingRoom) {
       throw { code: 'PLAYER_ALREADY_IN_ROOM', message: 'Already in a room.', status: 400 };
     }
@@ -125,9 +125,9 @@ export class RoomService {
     return room;
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // LEAVE ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async leaveRoom(userId: string): Promise<Room | null> {
     const roomId = await redisClient.get(`player:room:${userId}`);
@@ -162,9 +162,9 @@ export class RoomService {
     return room;
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // SET READY STATUS
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async setReadyStatus(
     userId: string,
@@ -186,9 +186,9 @@ export class RoomService {
     return room;
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // KICK PLAYER
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async kickPlayer(
     hostId: string,
@@ -215,18 +215,18 @@ export class RoomService {
     return room;
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // CHECK ALL READY
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   isAllReady(room: Room): boolean {
     if (room.players.length < 2) return false;
     return room.players.every((p) => p.isReady);
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // GET ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async getRoom(roomId: string): Promise<Room | null> {
     const data = await redisClient.get(`room:${roomId}`);
@@ -234,9 +234,9 @@ export class RoomService {
     return JSON.parse(data);
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // GET PLAYER ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async getPlayerRoom(userId: string): Promise<Room | null> {
     const roomId = await redisClient.get(`player:room:${userId}`);
@@ -244,9 +244,36 @@ export class RoomService {
     return await this.getRoom(roomId);
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // SAVE ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+  /**
+   * Returns the room the player is genuinely still in, clearing the pointer
+   * when it has gone stale.
+   *
+   * `player:room:<id>` used to be able to outlive the room it names ΓÇö the room
+   * is destroyed when the last player leaves, and a disconnect never released
+   * the pointer at all. With shared state that dangling key persists across
+   * restarts, and the player is locked out of creating or joining anything
+   * until its TTL lapses. Verifying the target still exists (and still lists
+   * the player) makes the lock self-healing.
+   */
+  private async resolveActiveRoom(userId: string): Promise<string | null> {
+    const roomId = await redisClient.get(`player:room:${userId}`);
+    if (!roomId) return null;
+
+    const room = await this.getRoom(roomId);
+    const stillListed = room?.players.some((p) => p.userId === userId);
+
+    if (!room || !stillListed) {
+      await redisClient.del(`player:room:${userId}`);
+      logger.info('Cleared a stale room pointer', { userId, roomId });
+      return null;
+    }
+
+    return roomId;
+  }
 
   async saveRoom(room: Room): Promise<void> {
     await redisClient.set(
@@ -256,9 +283,9 @@ export class RoomService {
     );
   }
 
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   // DESTROY ROOM
-  // ─────────────────────────────────────────
+  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async destroyRoom(room: Room): Promise<void> {
     await redisClient.del(`room:${room.roomId}`);
