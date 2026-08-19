@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import logger from '../utils/logger';
+import { levelForXp, rewardBetween } from '../users/leveling';
 import {
   PurchaseInput,
   RewardInput,
@@ -229,6 +230,34 @@ export class EconomyService {
     }
 
     if (Object.keys(updateData).length > 0) {
+      // Rewards move xp, so they can move the level too. Only matches used to
+      // recalculate it, which meant a player could collect daily xp for weeks
+      // and stay at the same level until they next finished a game.
+      if (input.xp) {
+        const before = await prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { xp: true, level: true },
+        });
+
+        const oldLevel = before?.level ?? 1;
+        const newLevel = levelForXp((before?.xp ?? 0) + input.xp);
+
+        if (newLevel > oldLevel) {
+          updateData.level = newLevel;
+          const bonus = rewardBetween(oldLevel, newLevel);
+          updateData.coins = {
+            increment: (input.coins ?? 0) + bonus,
+          };
+
+          logger.info('Player levelled up from a reward', {
+            userId: input.userId,
+            from: oldLevel,
+            to: newLevel,
+            coins: bonus,
+          });
+        }
+      }
+
       await prisma.user.update({
         where: { id: input.userId },
         data: updateData,
@@ -273,36 +302,168 @@ export class EconomyService {
   }
 
   // ─────────────────────────────────────────
-  // GET DAILY REWARD
+  // DAILY REWARDS
   // ─────────────────────────────────────────
 
-  async claimDailyReward(userId: string): Promise<void> {
-    const lastClaimKey = `daily:${userId}`;
-    const lastClaim = await import('../config/redis').then(
-      (m) => m.default.get(lastClaimKey)
-    );
+  /// The seven-day track. Day 7 pays the most and the cycle then restarts.
+  ///
+  /// This lives on the server, not in the app, so the amount shown on the
+  /// track and the amount actually credited cannot disagree. The client used
+  /// to hard-code both the table and a fake "current day" of 2.
+  static readonly DAILY_REWARDS: Array<{ coins: number; xp: number }> = [
+    { coins: 100, xp: 50 },
+    { coins: 150, xp: 60 },
+    { coins: 200, xp: 70 },
+    { coins: 250, xp: 80 },
+    { coins: 300, xp: 90 },
+    { coins: 400, xp: 110 },
+    { coins: 500, xp: 150 },
+  ];
 
-    if (lastClaim) {
+  /// Minutes to shift UTC by before deciding which calendar day it is.
+  ///
+  /// The boundary has to be the player's local midnight, not UTC midnight.
+  /// Slicing an ISO string rolled the reward day over at 05:30 IST, so a
+  /// player claiming at 1am was still on "yesterday" and one claiming at 6am
+  /// had silently skipped into the next day - which also meant a streak could
+  /// break overnight without a day actually being missed.
+  private static get dayOffsetMinutes(): number {
+    const raw = Number(process.env.REWARD_DAY_OFFSET_MINUTES);
+    // Defaults to IST (UTC+5:30), the player base this is being run for.
+    return Number.isFinite(raw) ? raw : 330;
+  }
+
+  private static dayStamp(at: Date = new Date()): string {
+    const shifted = new Date(
+      at.getTime() + EconomyService.dayOffsetMinutes * 60_000
+    );
+    return shifted.toISOString().slice(0, 10);
+  }
+
+  private static previousDayStamp(stamp: string): string {
+    // Plain calendar arithmetic on the already-shifted stamp, so it is not
+    // affected by the offset a second time.
+    const d = new Date(`${stamp}T00:00:00.000Z`);
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  private async readDailyState(
+    userId: string
+  ): Promise<{ day: number; lastClaim: string | null }> {
+    const redis = await import('../config/redis').then((m) => m.default);
+    const raw = await redis.get(`daily:${userId}`);
+    if (!raw) return { day: 0, lastClaim: null };
+
+    // The previous implementation stored the literal string '1' with a 24h
+    // TTL, so there was no streak to read and the value simply vanished.
+    // Anything that is not the current JSON shape is treated as "claimed
+    // today, day 1" rather than crashing on a legacy value.
+    try {
+      const parsed = JSON.parse(raw);
+      const day = Number(parsed?.day);
+      const lastClaim =
+        typeof parsed?.lastClaim === 'string' ? parsed.lastClaim : null;
+      if (!Number.isFinite(day) || day < 1 || day > 7 || !lastClaim) {
+        return { day: 0, lastClaim: null };
+      }
+      return { day, lastClaim };
+    } catch {
+      return { day: 1, lastClaim: EconomyService.dayStamp() };
+    }
+  }
+
+  /// What the app needs to draw the track: which day is next, whether it can
+  /// be claimed right now, and the whole reward table.
+  async getDailyStatus(userId: string) {
+    const today = EconomyService.dayStamp();
+    const { day, lastClaim } = await this.readDailyState(userId);
+
+    const claimedToday = lastClaim === today;
+    // A gap of two or more days resets the streak back to day 1.
+    const continues =
+      lastClaim === today ||
+      lastClaim === EconomyService.previousDayStamp(today);
+
+    const currentDay = claimedToday
+      ? day
+      : continues
+        ? (day % 7) + 1
+        : 1;
+
+    return {
+      currentDay,
+      streak: continues ? day : 0,
+      claimedToday,
+      canClaim: !claimedToday,
+      lastClaim,
+      rewards: EconomyService.DAILY_REWARDS.map((r, i) => ({
+        day: i + 1,
+        coins: r.coins,
+        xp: r.xp,
+      })),
+    };
+  }
+
+  async claimDailyReward(userId: string) {
+    const today = EconomyService.dayStamp();
+    const redis = await import('../config/redis').then((m) => m.default);
+
+    // Claim the day atomically BEFORE paying anything.
+    //
+    // Read-then-write is not safe here: a double tap, or the client's retry
+    // after a slow response, ran two claims concurrently. Both read
+    // "not claimed yet" and both paid out, so four taps minted four days'
+    // coins. `incr` is atomic in both backing stores (Redis INCR, and a
+    // single INSERT .. ON CONFLICT DO UPDATE in Postgres), so exactly one
+    // caller can ever see the value 1.
+    const guardKey = `daily:lock:${userId}:${today}`;
+    const holders = await redis.incr(guardKey);
+    // Outlives the day it guards, and is cheap to keep.
+    await redis.expire(guardKey, 2 * 86400);
+
+    if (holders > 1) {
       throw {
         code: 'ALREADY_CLAIMED',
-        message: 'Daily reward already claimed.',
+        message: 'Daily reward already claimed. Come back tomorrow.',
         status: 400,
       };
     }
 
-    // Grant daily reward
+    const status = await this.getDailyStatus(userId);
+
+    if (!status.canClaim) {
+      throw {
+        code: 'ALREADY_CLAIMED',
+        message: 'Daily reward already claimed. Come back tomorrow.',
+        status: 400,
+      };
+    }
+
+    const reward = EconomyService.DAILY_REWARDS[status.currentDay - 1];
+
     await this.grantReward({
       userId,
-      coins: 100,
-      xp: 50,
-      reason: 'Daily Login Reward',
+      coins: reward.coins,
+      xp: reward.xp,
+      reason: `Daily Login Reward - Day ${status.currentDay}`,
     });
 
-    // Set 24 hour expiry
-    const redis = await import('../config/redis').then((m) => m.default);
-    await redis.set(lastClaimKey, '1', { EX: 86400 });
+    // Kept for 30 days, not 24 hours: the record IS the streak, so it has to
+    // outlive the day it was written or the streak can never advance.
+    await redis.set(
+      `daily:${userId}`,
+      JSON.stringify({ day: status.currentDay, lastClaim: today }),
+      { EX: 30 * 86400 }
+    );
 
-    logger.info('Daily reward claimed', { userId });
+    logger.info('Daily reward claimed', {
+      userId,
+      day: status.currentDay,
+      coins: reward.coins,
+    });
+
+    return this.getDailyStatus(userId);
   }
 
   // ─────────────────────────────────────────
