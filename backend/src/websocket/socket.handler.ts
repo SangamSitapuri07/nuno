@@ -2,6 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { AuthenticatedSocket } from './socket.types';
 import { authenticateSocket, removeSocketSession } from './socket.auth';
 import { initializeMatchmakingHandlers } from '../matchmaking/matchmaking.handler';
+import matchmakingService from '../matchmaking/matchmaking.service';
 import { initializeRoomHandlers } from '../rooms/room.handler';
 import { initializeGameHandlers } from '../gameplay/game.handler';
 import { initializeVoiceHandlers } from '../voice/voice.handler';
@@ -259,10 +260,25 @@ export const initializeSocketHandlers = (io: Server): void => {
           }
         };
 
-        restoreMatchState();
+        // Fire-and-forget, but never unhandled.
+        //
+        // Both of these are deliberately not awaited - authentication should
+        // not block on them - but an un-caught rejection from a floating
+        // promise is fatal: Node terminates the process on unhandledRejection
+        // by default, so one store blip during one player's login would
+        // disconnect every player on the server. Attaching a catch keeps the
+        // failure local to the player it happened to.
+        restoreMatchState().catch((error) => {
+          logger.error('Restore state failed', { userId: socket.userId, error });
+        });
 
         // ═══ BROADCAST USER STATUS TO FRIENDS ═══
-        friendsService.broadcastUserStatus(io, socket.userId);
+        friendsService.broadcastUserStatus(io, socket.userId).catch((error) => {
+          logger.error('Status broadcast failed', {
+            userId: socket.userId,
+            error,
+          });
+        });
 
         logger.info('Socket authentication successful', {
           userId: socket.userId,
@@ -290,6 +306,24 @@ export const initializeSocketHandlers = (io: Server): void => {
           //
           // A match in progress is deliberately left alone: game.handler owns
           // that lifecycle and supports reconnecting into a running game.
+          // Drop them from the matchmaking queue too.
+          //
+          // Nothing did this, so a player who closed the app while searching
+          // stayed queued. The queue is only processed when somebody else
+          // joins it, and the next arrival was then paired with a socket that
+          // no longer exists: both were removed from the queue, a room and a
+          // match were created, and the live player got a "match found" for a
+          // game whose opponent could never appear. Reproduced in a test
+          // before this fix.
+          try {
+            await matchmakingService.leaveQueue(socket.userId);
+          } catch (error) {
+            logger.error('Failed to leave the queue on disconnect', {
+              userId: socket.userId,
+              error,
+            });
+          }
+
           try {
             const inMatch = await redisClient.get(`match:player:${socket.userId}`);
             if (!inMatch) {
